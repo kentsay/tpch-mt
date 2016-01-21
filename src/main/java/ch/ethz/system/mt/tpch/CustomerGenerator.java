@@ -35,26 +35,27 @@ public class CustomerGenerator
     private final double scaleFactor;
     private final int part;
     private final int partCount;
-    int datasize = 0;
+    int dataPerTenant = 0;
 
     private final Distributions distributions;
     private final TextPool textPool;
 
-    public CustomerGenerator(double scaleFactor, int part, int partCount)
+    public CustomerGenerator(double scaleFactor, int part, int partCount, int tenantSize)
     {
-        this(scaleFactor, part, partCount, Distributions.getDefaultDistributions(), TextPool.getDefaultTestPool());
+        this(scaleFactor, part, partCount, tenantSize, Distributions.getDefaultDistributions(), TextPool.getDefaultTestPool());
     }
 
-    public CustomerGenerator(double scaleFactor, int part, int partCount, Distributions distributions, TextPool textPool)
+    public CustomerGenerator(double scaleFactor, int part, int partCount, int tenantSize, Distributions distributions, TextPool textPool)
     {
         checkArgument(scaleFactor > 0, "scaleFactor must be greater than 0");
         checkArgument(part >= 1, "part must be at least 1");
         checkArgument(part <= partCount, "part must be less than or equal to part count");
+        checkArgument(tenantSize > 0, "tenant number must be greater than 0");
 
         this.scaleFactor = scaleFactor;
         this.part = part;
         this.partCount = partCount;
-        this.datasize = (int) calculateRowCount(SCALE_BASE, scaleFactor, part, partCount);
+        this.dataPerTenant = (int) calculateRowCount(SCALE_BASE, scaleFactor, part, partCount)/tenantSize;
 
         this.distributions = checkNotNull(distributions, "distributions is null");
         this.textPool = checkNotNull(textPool, "textPool is null");
@@ -67,6 +68,7 @@ public class CustomerGenerator
         return new CustomerGeneratorIterator(
                 distributions,
                 textPool,
+                dataPerTenant,
                 calculateStartIndex(SCALE_BASE, scaleFactor, part, partCount),
                 calculateRowCount(SCALE_BASE, scaleFactor, part, partCount));
     }
@@ -86,11 +88,13 @@ public class CustomerGenerator
 
         private long index;
         private long counter = 0;
+        private int dataSize;
 
-        private CustomerGeneratorIterator(Distributions distributions, TextPool textPool, long startIndex, long rowCount)
+        private CustomerGeneratorIterator(Distributions distributions, TextPool textPool, int dataSize, long startIndex, long rowCount)
         {
             this.startIndex = startIndex;
             this.rowCount = rowCount;
+            this.dataSize = dataSize;
 
             nationKeyRandom = new RandomBoundedInt(1489529863, 0, distributions.getNations().size() - 1);
             marketSegmentRandom = new RandomString(1140279430, distributions.getMarketSegments());
@@ -111,7 +115,7 @@ public class CustomerGenerator
                 return endOfData();
             }
 
-            if ((startIndex + counter + 1) > 20) {
+            if ((startIndex + counter + 1) > dataSize) {
                 counter = 0;
             }
 //            Customer customer = makeCustomer(startIndex + index + 1);

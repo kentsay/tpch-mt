@@ -22,7 +22,7 @@ public class run {
 
     public static void main(String args[]) {
 
-        double scaleFactor = 2;
+        double scaleFactor = 1;
         int part = 1;
         int numberOfParts = 1500;
 
@@ -47,9 +47,9 @@ public class run {
 
         Writer writer = null;
         try {
-            int tenant = 10;
-            CustomerGenerator customerGenerator = new CustomerGenerator(scaleFactor, part, numberOfParts);
-            int datasize = customerGenerator.datasize/tenant;
+            int tenant = 2;
+            CustomerGenerator customerGenerator = new CustomerGenerator(scaleFactor, part, numberOfParts, tenant);
+            int datasize = customerGenerator.dataPerTenant;
 
             //todo: each tenant should have different customers instead of same customers
             //solution: divide the customers generator data by the numbers of tenant
