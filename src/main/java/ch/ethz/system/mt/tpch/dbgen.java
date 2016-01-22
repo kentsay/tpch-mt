@@ -19,6 +19,9 @@ import java.io.Writer;
  *  2. config file for table we want to generate
  *  3. move repository under mine GitHub(done)
  *  4. add MT features
+ *      - tenant key
+ *      - data distribution mode: uniform
+ *      - data distribution mode: zipf
  */
 public class dbgen {
 
@@ -92,19 +95,19 @@ public class dbgen {
             writer.close();
 
 
-/*            writer = new FileWriter("lineitem.tbl");
+            writer = new FileWriter(OUTPUT_DIRECTORY + "//supplier.tbl");
+            for (Supplier entity : new SupplierGenerator(scaleFactor, part, numberOfParts)) {
+                writer.write(entity.toLine());
+                writer.write('\n');
+            }
+            writer.close();
+/*
+            writer = new FileWriter("lineitem.tbl");
             for (LineItem entity : new LineItemGenerator(scaleFactor, part, numberOfParts)) {
                 writer.write(entity.toLine());
                 writer.write('\n');
             }
             writer.close();
-
-//            writer = new FileWriter("nation.tbl");
-//            for (Nation entity : new NationGenerator(scaleFactor, part, numberOfParts)) {
-//                writer.write(entity.toLine());
-//                writer.write('\n');
-//            }
-//            writer.close();
 
             writer = new FileWriter("orders.tbl");
             for (Order entity : new OrderGenerator(scaleFactor, part, numberOfParts)) {
@@ -127,19 +130,19 @@ public class dbgen {
             }
             writer.close();
 
+//            writer = new FileWriter("nation.tbl");
+//            for (Nation entity : new NationGenerator(scaleFactor, part, numberOfParts)) {
+//                writer.write(entity.toLine());
+//                writer.write('\n');
+//            }
+//            writer.close();
+
 //            writer = new FileWriter("region.tbl");
 //            for (Region entity : new RegionGenerator(scaleFactor, part, numberOfParts)) {
 //                writer.write(entity.toLine());
 //                writer.write('\n');
 //            }
 //            writer.close();
-
-            writer = new FileWriter("supplier.tbl");
-            for (Supplier entity : new SupplierGenerator(scaleFactor, part, numberOfParts)) {
-                writer.write(entity.toLine());
-                writer.write('\n');
-            }
-            writer.close();
 
 */
             System.out.println("### DB Generate Done");
