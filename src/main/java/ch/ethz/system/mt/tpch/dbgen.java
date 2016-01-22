@@ -1,24 +1,28 @@
 package ch.ethz.system.mt.tpch;
 
 import org.apache.commons.cli.*;
+import util.FileUtil;
 
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Writer;
 
 /**
  * Created by kentsay on 14/01/2016.
- * Entry point to run the data generation of TPCH benchmark
+ * Entry point to generation database data for Multi-tenant version TPC-H benchmark
  */
 
 /**
  * TODO List
- *  1. command line tool (Scale Factor, Number of Tenant, Distribution mode)
+ *  1. command line tool (Scale Factor, Number of Tenant, Distribution mode)(done)
  *  2. config file for table we want to generate
- *  3. move repository under mine
+ *  3. move repository under mine GitHub(done)
  *  4. add MT features
  */
-public class run {
+public class dbgen {
+
+    public static final String OUTPUT_DIRECTORY = "output";
 
     public static void main(String args[]) {
 
@@ -30,9 +34,10 @@ public class run {
 
         Options options = new Options();
         options.addOption("h", false, "-- display this message");
-        options.addOption("s", true, "-- set Scale Factor (SF) to <n> (default: 1)");
-        options.addOption("t", true, "-- set Number of Tenants to <n> (default: 1)");
-        options.addOption("m", true, "-- set distribution mode to <mode> (default: uniform");
+        options.addOption("s", true,  "-- set Scale Factor (SF) to <n> (default: 1)");
+        options.addOption("t", true,  "-- set Number of Tenants to <n> (default: 1)");
+        options.addOption("m", true,  "-- set distribution mode to <mode> (default: uniform");
+        options.addOption("T", true,  "-- generate tables");
 
         CommandLineParser parser = new DefaultParser();
         try {
@@ -61,12 +66,16 @@ public class run {
         }
 
         Writer writer = null;
+        File file = null;
         try {
 
+            System.out.println("### DB Generate Start");
             CustomerGenerator customerGenerator = new CustomerGenerator(scaleFactor, part, numberOfParts, tenant);
             int datasize = customerGenerator.dataPerTenant;
 
-            writer = new FileWriter("customer.tbl");
+            file = new File(OUTPUT_DIRECTORY + "//customer.tbl");
+            FileUtil.checkParentDirector(file);
+            writer = new FileWriter(file);
 
             int counter = 0;
             int tenant_index = 1;
@@ -133,7 +142,7 @@ public class run {
             writer.close();
 
 */
-
+            System.out.println("### DB Generate Done");
         } catch (IOException e) {
             e.printStackTrace();
         }
