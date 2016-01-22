@@ -22,56 +22,66 @@ public class run {
 
     public static void main(String args[]) {
 
-        double scaleFactor = 1;
+        double scaleFactor = 1; //set default value for Scale Factor
         int part = 1;
         int numberOfParts = 1500;
+        int tenant = 1;
+        String disMode = null;
 
-        // create Options object
         Options options = new Options();
-        // add t option
-        options.addOption("t", false, "display current time");
+        options.addOption("h", false, "-- display this message");
+        options.addOption("s", true, "-- set Scale Factor (SF) to <n> (default: 1)");
+        options.addOption("t", true, "-- set Number of Tenants to <n> (default: 1)");
+        options.addOption("m", true, "-- set distribution mode to <mode> (default: uniform");
+
         CommandLineParser parser = new DefaultParser();
         try {
             CommandLine cmd = parser.parse( options, args);
-            if(cmd.hasOption("t")) {
-                // System.out.println("print date and time");
-                // print the date and time
+            if (cmd.hasOption("h")) {
+                HelpFormatter formatter = new HelpFormatter();
+                formatter.printHelp("Main", options);
             }
-            else {
-                // print the date
+            if (cmd.hasOption("s")) {
+                scaleFactor = Double.parseDouble(cmd.getOptionValue("s"));
+            } else {
+                scaleFactor = 1;
+            }
+            if (cmd.hasOption("t")) {
+                tenant = Integer.parseInt(cmd.getOptionValue("t"));
+            } else {
+                tenant = 1; //set default value for tenant number
+            }
+            if (cmd.hasOption("m")) {
+                disMode = cmd.getOptionValue("m");
+            } else {
+                disMode = "uniform"; //set default value for distribution mode
             }
         } catch (ParseException e) {
             e.printStackTrace();
         }
 
-
         Writer writer = null;
         try {
-            int tenant = 2;
+
             CustomerGenerator customerGenerator = new CustomerGenerator(scaleFactor, part, numberOfParts, tenant);
             int datasize = customerGenerator.dataPerTenant;
-
-            //todo: each tenant should have different customers instead of same customers
-            //solution: divide the customers generator data by the numbers of tenant
-            //          add the rest to the last tenant
-            //this will ensure the scaling factor remain the same
-            //todo: each customer key for each tenant should start from 1
 
             writer = new FileWriter("customer.tbl");
 
             int counter = 0;
-            int tenant_index =1;
+            int tenant_index = 1;
             for (Customer entity : customerGenerator) {
                 if (counter < datasize) {
                     writer.write(tenant_index + "|" + entity.toLine() + "\n");
                 } else {
-                    tenant_index ++;
+                    tenant_index++;
                     counter = 0;
                     writer.write(tenant_index + "|" + entity.toLine() + "\n");
                 }
                 counter++;
             }
             writer.close();
+
 
 /*            writer = new FileWriter("lineitem.tbl");
             for (LineItem entity : new LineItemGenerator(scaleFactor, part, numberOfParts)) {
