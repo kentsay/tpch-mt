@@ -75,6 +75,7 @@ public class SupplierGenerator
         return new SupplierGeneratorIterator(
                 distributions,
                 textPool,
+                dataPerTenant,
                 calculateStartIndex(SCALE_BASE, scaleFactor, part, partCount),
                 calculateRowCount(SCALE_BASE, scaleFactor, part, partCount));
     }
@@ -96,11 +97,14 @@ public class SupplierGenerator
         private final long rowCount;
 
         private long index;
+        private long counter = 0;
+        private int dataSize;
 
-        private SupplierGeneratorIterator(Distributions distributions, TextPool textPool, long startIndex, long rowCount)
+        private SupplierGeneratorIterator(Distributions distributions, TextPool textPool, int dataSize, long startIndex, long rowCount)
         {
             this.startIndex = startIndex;
             this.rowCount = rowCount;
+            this.dataSize = dataSize;
 
             nationKeyRandom = new RandomBoundedInt(110356601, 0, distributions.getNations().size() - 1);
             commentRandom = new RandomText(1341315363, textPool, COMMENT_AVERAGE_LENGTH);
@@ -123,7 +127,11 @@ public class SupplierGenerator
                 return endOfData();
             }
 
-            Supplier supplier = makeSupplier(startIndex + index + 1);
+            if ((startIndex + counter + 1) > dataSize) {
+                counter = 0;
+            }
+
+            Supplier supplier = makeSupplier(startIndex + counter + 1);
 
             addressRandom.rowFinished();
             nationKeyRandom.rowFinished();
@@ -135,6 +143,7 @@ public class SupplierGenerator
             bbbOffsetRandom.rowFinished();
             bbbTypeRandom.rowFinished();
 
+            counter++;
             index++;
 
             return supplier;
