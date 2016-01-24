@@ -1,6 +1,7 @@
 package ch.ethz.system.mt.tpch;
 
 import org.apache.commons.cli.*;
+import util.DbGenUtil;
 import util.FileUtil;
 
 import java.io.File;
@@ -73,34 +74,22 @@ public class dbgen {
         try {
 
             System.out.println("### DB Generate Start");
+            /*** Customer Table Generator ***/
             CustomerGenerator customerGenerator = new CustomerGenerator(scaleFactor, part, numberOfParts, tenant);
-            int datasize = customerGenerator.dataPerTenant;
+            int custDataSize = customerGenerator.dataPerTenant;
 
             file = new File(OUTPUT_DIRECTORY + "//customer.tbl");
-            FileUtil.checkParentDirector(file);
+            FileUtil.checkParentDirector(file); //check and create output directory
             writer = new FileWriter(file);
 
-            int counter = 0;
-            int tenant_index = 1;
-            for (Customer entity : customerGenerator) {
-                if (counter < datasize) {
-                    writer.write(tenant_index + "|" + entity.toLine() + "\n");
-                } else {
-                    tenant_index++;
-                    counter = 0;
-                    writer.write(tenant_index + "|" + entity.toLine() + "\n");
-                }
-                counter++;
-            }
-            writer.close();
+            DbGenUtil.generator(customerGenerator, custDataSize, writer);
 
-
+            /*** Supplier Table Generator ***/
+            SupplierGenerator supplierGenerator = new SupplierGenerator(scaleFactor, part, numberOfParts, tenant);
+            int suppDataSize = supplierGenerator.dataPerTenant;
             writer = new FileWriter(OUTPUT_DIRECTORY + "//supplier.tbl");
-            for (Supplier entity : new SupplierGenerator(scaleFactor, part, numberOfParts)) {
-                writer.write(entity.toLine());
-                writer.write('\n');
-            }
-            writer.close();
+
+            DbGenUtil.generator(supplierGenerator, suppDataSize, writer);
 /*
             writer = new FileWriter("lineitem.tbl");
             for (LineItem entity : new LineItemGenerator(scaleFactor, part, numberOfParts)) {

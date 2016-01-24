@@ -24,7 +24,7 @@ import static ch.ethz.system.mt.tpch.GenerateUtils.calculateStartIndex;
 import static java.util.Locale.ENGLISH;
 
 public class CustomerGenerator
-        implements Iterable<Customer>
+        implements TpchSchemaInterface<Customer>
 {
     public static final int SCALE_BASE = 150_000;
     private static final int ACCOUNT_BALANCE_MIN = -99999;

@@ -69,7 +69,7 @@ public abstract class TpchTable<E extends TpchEntity>
     {
         public Iterable<Supplier> createGenerator(double scaleFactor, int part, int partCount, int tenantSize)
         {
-            return new SupplierGenerator(scaleFactor, part, partCount);
+            return new SupplierGenerator(scaleFactor, part, partCount, tenantSize);
         }
     };
 

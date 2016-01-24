@@ -24,7 +24,7 @@ import static ch.ethz.system.mt.tpch.GenerateUtils.calculateStartIndex;
 import static java.util.Locale.ENGLISH;
 
 public class SupplierGenerator
-        implements Iterable<Supplier>
+        implements TpchSchemaInterface<Supplier>
 {
     public static final int SCALE_BASE = 10_000;
 
@@ -46,21 +46,24 @@ public class SupplierGenerator
 
     private final Distributions distributions;
     private final TextPool textPool;
+    public int dataPerTenant = 0;
 
-    public SupplierGenerator(double scaleFactor, int part, int partCount)
+    public SupplierGenerator(double scaleFactor, int part, int partCount, int tenantSize)
     {
-        this(scaleFactor, part, partCount, Distributions.getDefaultDistributions(), TextPool.getDefaultTestPool());
+        this(scaleFactor, part, partCount, tenantSize, Distributions.getDefaultDistributions(), TextPool.getDefaultTestPool());
     }
 
-    public SupplierGenerator(double scaleFactor, int part, int partCount, Distributions distributions, TextPool textPool)
+    public SupplierGenerator(double scaleFactor, int part, int partCount, int tenantSize, Distributions distributions, TextPool textPool)
     {
         checkArgument(scaleFactor > 0, "scaleFactor must be greater than 0");
         checkArgument(part >= 1, "part must be at least 1");
         checkArgument(part <= partCount, "part must be less than or equal to part count");
+        checkArgument(tenantSize > 0, "tenant number must be greater than 0");
 
         this.scaleFactor = scaleFactor;
         this.part = part;
         this.partCount = partCount;
+        this.dataPerTenant = (int) calculateRowCount(SCALE_BASE, scaleFactor, part, partCount)/tenantSize;
 
         this.distributions = checkNotNull(distributions, "distributions is null");
         this.textPool = checkNotNull(textPool, "textPool is null");
