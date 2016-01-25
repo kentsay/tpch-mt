@@ -32,7 +32,7 @@ public class dbgen {
 
         double scaleFactor = 1; //set default value for Scale Factor
         int part = 1;
-        int numberOfParts = 1500;
+        int numberOfParts = 150;
         int tenant = 1;
         String disMode = null;
 
@@ -90,42 +90,33 @@ public class dbgen {
             writer = new FileWriter(OUTPUT_DIRECTORY + "//supplier.tbl");
 
             DbGenUtil.generator(supplierGenerator, suppDataSize, writer);
-/*
-            writer = new FileWriter("lineitem.tbl");
+
+            /*** Lineitem Table Generator ***/
+            // TODO: 24/01/2016  
+            writer = new FileWriter(OUTPUT_DIRECTORY + "//lineitem.tbl");
             for (LineItem entity : new LineItemGenerator(scaleFactor, part, numberOfParts)) {
                 writer.write(entity.toLine());
                 writer.write('\n');
             }
             writer.close();
 
-            writer = new FileWriter("orders.tbl");
+            /*** Orders Table Generator ***/
+            // TODO: 24/01/2016  
+            writer = new FileWriter(OUTPUT_DIRECTORY + "//orders.tbl");
             for (Order entity : new OrderGenerator(scaleFactor, part, numberOfParts)) {
                 writer.write(entity.toLine());
                 writer.write('\n');
             }
             writer.close();
 
-            writer = new FileWriter("part.tbl");
-            for (Part entity : new PartGenerator(scaleFactor, part, numberOfParts)) {
-                writer.write(entity.toLine());
-                writer.write('\n');
-            }
-            writer.close();
-
-            writer = new FileWriter("partsupp.tbl");
-            for (PartSupplier entity : new PartSupplierGenerator(scaleFactor, part, numberOfParts)) {
-                writer.write(entity.toLine());
-                writer.write('\n');
-            }
-            writer.close();
-
+            // TODO: 24/01/2016  
 //            writer = new FileWriter("nation.tbl");
 //            for (Nation entity : new NationGenerator(scaleFactor, part, numberOfParts)) {
 //                writer.write(entity.toLine());
 //                writer.write('\n');
 //            }
 //            writer.close();
-
+//
 //            writer = new FileWriter("region.tbl");
 //            for (Region entity : new RegionGenerator(scaleFactor, part, numberOfParts)) {
 //                writer.write(entity.toLine());
@@ -133,7 +124,6 @@ public class dbgen {
 //            }
 //            writer.close();
 
-*/
             System.out.println("### DB Generate Done");
         } catch (IOException e) {
             e.printStackTrace();
