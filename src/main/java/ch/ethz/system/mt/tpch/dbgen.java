@@ -40,7 +40,7 @@ public class dbgen {
         options.addOption("h", false, "-- display this message");
         options.addOption("s", true,  "-- set Scale Factor (SF) to <n> (default: 1)");
         options.addOption("t", true,  "-- set Number of Tenants to <n> (default: 1)");
-        options.addOption("m", true,  "-- set distribution mode to <mode> (default: uniform");
+        options.addOption("m", true,  "-- set distribution mode to <mode> (default: uniform, others: zipf");
         options.addOption("T", true,  "-- generate tables");
 
         CommandLineParser parser = new DefaultParser();
@@ -71,45 +71,45 @@ public class dbgen {
 
         Writer writer = null;
         File file = null;
-        try {
 
-            System.out.println("### DB Generate Start");
-            /*** Customer Table Generator ***/
-            CustomerGenerator customerGenerator = new CustomerGenerator(scaleFactor, part, numberOfParts, tenant);
-            int custDataSize = customerGenerator.dataPerTenant;
+        switch(disMode) {
+            case "uniform":
+                try {
+                    System.out.println("### DB Generate Start");
+                    /*** Customer Table Generator ***/
+                    CustomerGenerator customerGenerator = new CustomerGenerator(scaleFactor, part, numberOfParts, tenant);
+                    int custDataSize = customerGenerator.dataPerTenant;
 
-            file = new File(OUTPUT_DIRECTORY + "//customer.tbl");
-            FileUtil.checkParentDirector(file); //check and create output directory
-            writer = new FileWriter(file);
+                    file = new File(OUTPUT_DIRECTORY + "//customer.tbl");
+                    FileUtil.checkParentDirector(file); //check and create output directory
+                    writer = new FileWriter(file);
 
-            DbGenUtil.generator(customerGenerator, custDataSize, writer);
+                    DbGenUtil.generator(customerGenerator, custDataSize, writer);
 
-            /*** Supplier Table Generator ***/
-            SupplierGenerator supplierGenerator = new SupplierGenerator(scaleFactor, part, numberOfParts, tenant);
-            int suppDataSize = supplierGenerator.dataPerTenant;
-            writer = new FileWriter(OUTPUT_DIRECTORY + "//supplier.tbl");
+                    /*** Supplier Table Generator ***/
+                    SupplierGenerator supplierGenerator = new SupplierGenerator(scaleFactor, part, numberOfParts, tenant);
+                    int suppDataSize = supplierGenerator.dataPerTenant;
+                    writer = new FileWriter(OUTPUT_DIRECTORY + "//supplier.tbl");
 
-            DbGenUtil.generator(supplierGenerator, suppDataSize, writer);
+                    DbGenUtil.generator(supplierGenerator, suppDataSize, writer);
 
-            /*** Lineitem Table Generator ***/
-            // TODO: 24/01/2016  
-            writer = new FileWriter(OUTPUT_DIRECTORY + "//lineitem.tbl");
-            for (LineItem entity : new LineItemGenerator(scaleFactor, part, numberOfParts)) {
-                writer.write(entity.toLine());
-                writer.write('\n');
-            }
-            writer.close();
+                    /*** Lineitem Table Generator ***/
+                    LineItemGenerator lineItemGenerator = new LineItemGenerator(scaleFactor, part, numberOfParts, tenant);
+                    int lineItemDataSize = lineItemGenerator.dataPerTenant;
+                    writer = new FileWriter(OUTPUT_DIRECTORY + "//lineitem.tbl");
 
-            /*** Orders Table Generator ***/
-            // TODO: 24/01/2016  
-            writer = new FileWriter(OUTPUT_DIRECTORY + "//orders.tbl");
-            for (Order entity : new OrderGenerator(scaleFactor, part, numberOfParts)) {
-                writer.write(entity.toLine());
-                writer.write('\n');
-            }
-            writer.close();
+                    DbGenUtil.generator(lineItemGenerator, lineItemDataSize, writer);
 
-            // TODO: 24/01/2016  
+                    /*** Orders Table Generator ***/
+                    // TODO: 24/01/2016
+                    writer = new FileWriter(OUTPUT_DIRECTORY + "//orders.tbl");
+                    for (Order entity : new OrderGenerator(scaleFactor, part, numberOfParts)) {
+                        writer.write(entity.toLine());
+                        writer.write('\n');
+                    }
+                    writer.close();
+
+                    // TODO: 24/01/2016
 //            writer = new FileWriter("nation.tbl");
 //            for (Nation entity : new NationGenerator(scaleFactor, part, numberOfParts)) {
 //                writer.write(entity.toLine());
@@ -124,9 +124,13 @@ public class dbgen {
 //            }
 //            writer.close();
 
-            System.out.println("### DB Generate Done");
-        } catch (IOException e) {
-            e.printStackTrace();
+                    System.out.println("### DB Generate Done");
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                break;
+            case "zipfs":
+                break;
         }
     }
 }

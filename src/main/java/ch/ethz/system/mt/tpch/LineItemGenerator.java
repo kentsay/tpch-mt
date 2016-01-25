@@ -25,7 +25,7 @@ import static ch.ethz.system.mt.tpch.OrderGenerator.createOrderDateRandom;
 import static ch.ethz.system.mt.tpch.OrderGenerator.makeOrderKey;
 
 public class LineItemGenerator
-        implements Iterable<LineItem>
+        implements TpchSchemaInterface<LineItem>
 {
     private static final int QUANTITY_MIN = 1;
     private static final int QUANTITY_MAX = 50;
@@ -50,23 +50,27 @@ public class LineItemGenerator
     private final int part;
     private final int partCount;
 
+
     private final Distributions distributions;
     private final TextPool textPool;
+    public int dataPerTenant = 0;
 
-    public LineItemGenerator(double scaleFactor, int part, int partCount)
+    public LineItemGenerator(double scaleFactor, int part, int partCount, int tenantSize)
     {
-        this(scaleFactor, part, partCount, Distributions.getDefaultDistributions(), TextPool.getDefaultTestPool());
+        this(scaleFactor, part, partCount, tenantSize, Distributions.getDefaultDistributions(), TextPool.getDefaultTestPool());
     }
 
-    public LineItemGenerator(double scaleFactor, int part, int partCount, Distributions distributions, TextPool textPool)
+    public LineItemGenerator(double scaleFactor, int part, int partCount, int tenantSize, Distributions distributions, TextPool textPool)
     {
         checkArgument(scaleFactor > 0, "scaleFactor must be greater than 0");
         checkArgument(part >= 1, "part must be at least 1");
         checkArgument(part <= partCount, "part must be less than or equal to part count");
+        checkArgument(tenantSize > 0, "tenant number must be greater than 0");
 
         this.scaleFactor = scaleFactor;
         this.part = part;
         this.partCount = partCount;
+        this.dataPerTenant = (int) GenerateUtils.calculateRowCount(OrderGenerator.SCALE_BASE, scaleFactor, part, partCount)/tenantSize;
 
         this.distributions = checkNotNull(distributions, "distributions is null");
         this.textPool = checkNotNull(textPool, "textPool is null");
@@ -79,6 +83,7 @@ public class LineItemGenerator
                 distributions,
                 textPool,
                 scaleFactor,
+                dataPerTenant,
                 GenerateUtils.calculateStartIndex(OrderGenerator.SCALE_BASE, scaleFactor, part, partCount),
                 GenerateUtils.calculateRowCount(OrderGenerator.SCALE_BASE, scaleFactor, part, partCount));
     }
@@ -117,7 +122,7 @@ public class LineItemGenerator
         private int lineCount;
         private int lineNumber;
 
-        private LineItemGeneratorIterator(Distributions distributions, TextPool textPool, double scaleFactor, long startIndex, long rowCount)
+        private LineItemGeneratorIterator(Distributions distributions, TextPool textPool, double scaleFactor, int dataPerTenant, long startIndex, long rowCount)
         {
             this.scaleFactor = scaleFactor;
             this.startIndex = startIndex;

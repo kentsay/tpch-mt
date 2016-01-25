@@ -44,7 +44,7 @@ public abstract class TpchTable<E extends TpchEntity>
     {
         public Iterable<LineItem> createGenerator(double scaleFactor, int part, int partCount, int tenantSize)
         {
-            return new LineItemGenerator(scaleFactor, part, partCount);
+            return new LineItemGenerator(scaleFactor, part, partCount, tenantSize);
         }
     };
 

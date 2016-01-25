@@ -109,6 +109,6 @@ public class TestLineItemGenerator
 
     public static void assertPartialMD5(int scaleFactor, int step, int children, String expectedMD5)
     {
-        assertEntityLinesMD5(new LineItemGenerator(scaleFactor, step, children), expectedMD5);
+        assertEntityLinesMD5(new LineItemGenerator(scaleFactor, step, children, 1), expectedMD5);
     }
 }
