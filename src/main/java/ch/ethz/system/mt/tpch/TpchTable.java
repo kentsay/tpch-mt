@@ -35,7 +35,7 @@ public abstract class TpchTable<E extends TpchEntity>
     {
         public Iterable<Order> createGenerator(double scaleFactor, int part, int partCount, int tenantSize)
         {
-            return new OrderGenerator(scaleFactor, part, partCount);
+            return new OrderGenerator(scaleFactor, part, partCount, tenantSize);
         }
     };
 

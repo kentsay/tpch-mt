@@ -23,7 +23,7 @@ import static ch.ethz.system.mt.tpch.PartGenerator.calculatePartPrice;
 import static java.util.Locale.ENGLISH;
 
 public class OrderGenerator
-        implements Iterable<Order>
+        implements TpchSchemaInterface<Order>
 {
     public static final int SCALE_BASE = 1_500_000;
 
@@ -48,21 +48,24 @@ public class OrderGenerator
 
     private final Distributions distributions;
     private final TextPool textPool;
+    public int dataPerTenant;
 
-    public OrderGenerator(double scaleFactor, int part, int partCount)
+    public OrderGenerator(double scaleFactor, int part, int partCount, int tenantSize)
     {
-        this(scaleFactor, part, partCount, Distributions.getDefaultDistributions(), TextPool.getDefaultTestPool());
+        this(scaleFactor, part, partCount, tenantSize, Distributions.getDefaultDistributions(), TextPool.getDefaultTestPool());
     }
 
-    public OrderGenerator(double scaleFactor, int part, int partCount, Distributions distributions, TextPool textPool)
+    public OrderGenerator(double scaleFactor, int part, int partCount, int tenantSize, Distributions distributions, TextPool textPool)
     {
         checkArgument(scaleFactor > 0, "scaleFactor must be greater than 0");
         checkArgument(part >= 1, "part must be at least 1");
         checkArgument(part <= partCount, "part must be less than or equal to part count");
+        checkArgument(tenantSize > 0, "tenant size must be greater than 0");
 
         this.scaleFactor = scaleFactor;
         this.part = part;
         this.partCount = partCount;
+        this.dataPerTenant = (int) GenerateUtils.calculateRowCount(SCALE_BASE, scaleFactor, part, partCount)/tenantSize;
 
         this.distributions = checkNotNull(distributions, "distributions is null");
         this.textPool = checkNotNull(textPool, "textPool is null");
@@ -75,6 +78,7 @@ public class OrderGenerator
                 distributions,
                 textPool,
                 scaleFactor,
+                dataPerTenant,
                 GenerateUtils.calculateStartIndex(SCALE_BASE, scaleFactor, part, partCount),
                 GenerateUtils.calculateRowCount(SCALE_BASE, scaleFactor, part, partCount));
     }
@@ -101,11 +105,13 @@ public class OrderGenerator
         private final long maxCustomerKey;
 
         private long index;
+        private int dataSize;
 
-        private OrderGeneratorIterator(Distributions distributions, TextPool textPool, double scaleFactor, long startIndex, long rowCount)
+        private OrderGeneratorIterator(Distributions distributions, TextPool textPool, double scaleFactor, int dataSize, long startIndex, long rowCount)
         {
             this.startIndex = startIndex;
             this.rowCount = rowCount;
+            this.dataSize = dataSize;
 
             clerkRandom = new RandomBoundedInt(1171034773, 1, Math.max((int) (scaleFactor * CLERK_SCALE_BASE), CLERK_SCALE_BASE));
 

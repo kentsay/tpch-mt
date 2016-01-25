@@ -1,6 +1,7 @@
 package ch.ethz.system.mt.tpch;
 
 import org.apache.commons.cli.*;
+import org.apache.commons.math3.distribution.ZipfDistribution;
 import util.DbGenUtil;
 import util.FileUtil;
 
@@ -49,6 +50,7 @@ public class dbgen {
             if (cmd.hasOption("h")) {
                 HelpFormatter formatter = new HelpFormatter();
                 formatter.printHelp("Main", options);
+                System.exit(0);
             }
             if (cmd.hasOption("s")) {
                 scaleFactor = Double.parseDouble(cmd.getOptionValue("s"));
@@ -76,6 +78,7 @@ public class dbgen {
             case "uniform":
                 try {
                     System.out.println("### DB Generate Start");
+
                     /*** Customer Table Generator ***/
                     CustomerGenerator customerGenerator = new CustomerGenerator(scaleFactor, part, numberOfParts, tenant);
                     int custDataSize = customerGenerator.dataPerTenant;
@@ -83,33 +86,28 @@ public class dbgen {
                     file = new File(OUTPUT_DIRECTORY + "//customer.tbl");
                     FileUtil.checkParentDirector(file); //check and create output directory
                     writer = new FileWriter(file);
-
                     DbGenUtil.generator(customerGenerator, custDataSize, writer);
 
                     /*** Supplier Table Generator ***/
                     SupplierGenerator supplierGenerator = new SupplierGenerator(scaleFactor, part, numberOfParts, tenant);
                     int suppDataSize = supplierGenerator.dataPerTenant;
                     writer = new FileWriter(OUTPUT_DIRECTORY + "//supplier.tbl");
-
                     DbGenUtil.generator(supplierGenerator, suppDataSize, writer);
 
                     /*** Lineitem Table Generator ***/
                     LineItemGenerator lineItemGenerator = new LineItemGenerator(scaleFactor, part, numberOfParts, tenant);
                     int lineItemDataSize = lineItemGenerator.dataPerTenant;
                     writer = new FileWriter(OUTPUT_DIRECTORY + "//lineitem.tbl");
-
                     DbGenUtil.generator(lineItemGenerator, lineItemDataSize, writer);
 
                     /*** Orders Table Generator ***/
-                    // TODO: 24/01/2016
+                    OrderGenerator orderGenerator = new OrderGenerator(scaleFactor, part, numberOfParts, tenant);
+                    int orderDataSize = orderGenerator.dataPerTenant;
                     writer = new FileWriter(OUTPUT_DIRECTORY + "//orders.tbl");
-                    for (Order entity : new OrderGenerator(scaleFactor, part, numberOfParts)) {
-                        writer.write(entity.toLine());
-                        writer.write('\n');
-                    }
-                    writer.close();
+                    DbGenUtil.generator(orderGenerator, orderDataSize, writer);
 
-                    // TODO: 24/01/2016
+                    System.out.println("### DB Generate Done");
+
 //            writer = new FileWriter("nation.tbl");
 //            for (Nation entity : new NationGenerator(scaleFactor, part, numberOfParts)) {
 //                writer.write(entity.toLine());
@@ -124,12 +122,15 @@ public class dbgen {
 //            }
 //            writer.close();
 
-                    System.out.println("### DB Generate Done");
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
                 break;
             case "zipfs":
+                //TODO
+                ZipfDistribution distribution = new ZipfDistribution(10,1);
+
+                System.out.printf(String.valueOf(distribution.getExponent()));
                 break;
         }
     }
