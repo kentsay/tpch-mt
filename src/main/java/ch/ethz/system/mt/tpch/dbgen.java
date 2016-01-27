@@ -17,10 +17,8 @@ import java.io.Writer;
 
 /**
  * TODO List
- *  1. command line tool (Scale Factor, Number of Tenant, Distribution mode)(done)
- *  2. config file for table we want to generate
- *  3. move repository under mine GitHub(done)
- *  4. add MT features
+ *  1. config file for table we want to generate
+ *  2. add MT features
  *      - tenant key
  *      - data distribution mode: uniform
  *      - data distribution mode: zipf
@@ -33,8 +31,9 @@ public class dbgen {
 
         double scaleFactor = 1; //set default value for Scale Factor
         int part = 1;
-        int numberOfParts = 150;
+        int numberOfParts = 1500;
         int tenant = 1;
+        int[] dataSize;
         String disMode = null;
 
         Options options = new Options();
@@ -71,8 +70,8 @@ public class dbgen {
             e.printStackTrace();
         }
 
-        Writer writer = null;
-        File file = null;
+        Writer writer;
+        File file;
 
         switch(disMode) {
             case "uniform":
@@ -81,30 +80,30 @@ public class dbgen {
 
                     /*** Customer Table Generator ***/
                     CustomerGenerator customerGenerator = new CustomerGenerator(scaleFactor, part, numberOfParts, tenant);
-                    int custDataSize = customerGenerator.dataPerTenant;
+                    dataSize = DbGenUtil.dataSizeArray(tenant, customerGenerator.dataPerTenant, customerGenerator.lastTenantData);
 
                     file = new File(OUTPUT_DIRECTORY + "//customer.tbl");
                     FileUtil.checkParentDirector(file); //check and create output directory
                     writer = new FileWriter(file);
-                    DbGenUtil.generator(customerGenerator, custDataSize, writer);
+                    DbGenUtil.generator(customerGenerator, dataSize, writer);
 
                     /*** Supplier Table Generator ***/
                     SupplierGenerator supplierGenerator = new SupplierGenerator(scaleFactor, part, numberOfParts, tenant);
-                    int suppDataSize = supplierGenerator.dataPerTenant;
+                    dataSize = DbGenUtil.dataSizeArray(tenant, supplierGenerator.dataPerTenant, supplierGenerator.lastTenantData);
                     writer = new FileWriter(OUTPUT_DIRECTORY + "//supplier.tbl");
-                    DbGenUtil.generator(supplierGenerator, suppDataSize, writer);
+                    DbGenUtil.generator(supplierGenerator, dataSize, writer);
 
                     /*** Lineitem Table Generator ***/
                     LineItemGenerator lineItemGenerator = new LineItemGenerator(scaleFactor, part, numberOfParts, tenant);
-                    int lineItemDataSize = lineItemGenerator.dataPerTenant;
+                    dataSize = DbGenUtil.dataSizeArray(tenant, lineItemGenerator.dataPerTenant, lineItemGenerator.lastTenantData);
                     writer = new FileWriter(OUTPUT_DIRECTORY + "//lineitem.tbl");
-                    DbGenUtil.generator(lineItemGenerator, lineItemDataSize, writer);
+                    DbGenUtil.generator(lineItemGenerator, dataSize, writer);
 
                     /*** Orders Table Generator ***/
                     OrderGenerator orderGenerator = new OrderGenerator(scaleFactor, part, numberOfParts, tenant);
-                    int orderDataSize = orderGenerator.dataPerTenant;
+                    dataSize = DbGenUtil.dataSizeArray(tenant, orderGenerator.dataPerTenant, orderGenerator.lastTenantData);
                     writer = new FileWriter(OUTPUT_DIRECTORY + "//orders.tbl");
-                    DbGenUtil.generator(orderGenerator, orderDataSize, writer);
+                    DbGenUtil.generator(orderGenerator, dataSize, writer);
 
                     System.out.println("### DB Generate Done");
 

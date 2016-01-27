@@ -53,7 +53,11 @@ public class LineItemGenerator
 
     private final Distributions distributions;
     private final TextPool textPool;
+
+    public int tenantSize = 0;
     public int dataPerTenant = 0;
+    public int lastTenantData = 0;
+
 
     public LineItemGenerator(double scaleFactor, int part, int partCount, int tenantSize)
     {
@@ -70,7 +74,13 @@ public class LineItemGenerator
         this.scaleFactor = scaleFactor;
         this.part = part;
         this.partCount = partCount;
+        this.tenantSize = tenantSize;
         this.dataPerTenant = (int) GenerateUtils.calculateRowCount(OrderGenerator.SCALE_BASE, scaleFactor, part, partCount)/tenantSize;
+        this.lastTenantData = this.dataPerTenant + (int) GenerateUtils.calculateRowCount(OrderGenerator.SCALE_BASE, scaleFactor, part, partCount) % tenantSize;
+
+        System.out.println("###" + GenerateUtils.calculateRowCount(OrderGenerator.SCALE_BASE, scaleFactor, part, partCount));
+        System.out.println("###" + this.dataPerTenant);
+        System.out.println("###" + this.lastTenantData);
 
         this.distributions = checkNotNull(distributions, "distributions is null");
         this.textPool = checkNotNull(textPool, "textPool is null");
@@ -83,7 +93,7 @@ public class LineItemGenerator
                 distributions,
                 textPool,
                 scaleFactor,
-                dataPerTenant,
+                new int[] {tenantSize, dataPerTenant, lastTenantData},
                 GenerateUtils.calculateStartIndex(OrderGenerator.SCALE_BASE, scaleFactor, part, partCount),
                 GenerateUtils.calculateRowCount(OrderGenerator.SCALE_BASE, scaleFactor, part, partCount));
     }
@@ -122,7 +132,9 @@ public class LineItemGenerator
         private int lineCount;
         private int lineNumber;
 
-        private LineItemGeneratorIterator(Distributions distributions, TextPool textPool, double scaleFactor, int dataPerTenant, long startIndex, long rowCount)
+        private int[] dataBlock;
+
+        private LineItemGeneratorIterator(Distributions distributions, TextPool textPool, double scaleFactor, int[] dataBlock, long startIndex, long rowCount)
         {
             this.scaleFactor = scaleFactor;
             this.startIndex = startIndex;

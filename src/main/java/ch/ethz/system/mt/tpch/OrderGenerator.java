@@ -48,7 +48,10 @@ public class OrderGenerator
 
     private final Distributions distributions;
     private final TextPool textPool;
-    public int dataPerTenant;
+
+    public int tenantSize = 0;
+    public int dataPerTenant = 0;
+    public int lastTenantData = 0;
 
     public OrderGenerator(double scaleFactor, int part, int partCount, int tenantSize)
     {
@@ -65,7 +68,9 @@ public class OrderGenerator
         this.scaleFactor = scaleFactor;
         this.part = part;
         this.partCount = partCount;
+        this.tenantSize = tenantSize;
         this.dataPerTenant = (int) GenerateUtils.calculateRowCount(SCALE_BASE, scaleFactor, part, partCount)/tenantSize;
+        this.lastTenantData = this.dataPerTenant + ((int) GenerateUtils.calculateRowCount(SCALE_BASE, scaleFactor, part, partCount) % tenantSize);
 
         this.distributions = checkNotNull(distributions, "distributions is null");
         this.textPool = checkNotNull(textPool, "textPool is null");
@@ -78,7 +83,7 @@ public class OrderGenerator
                 distributions,
                 textPool,
                 scaleFactor,
-                dataPerTenant,
+                new int[] {tenantSize, dataPerTenant, lastTenantData},
                 GenerateUtils.calculateStartIndex(SCALE_BASE, scaleFactor, part, partCount),
                 GenerateUtils.calculateRowCount(SCALE_BASE, scaleFactor, part, partCount));
     }
@@ -105,13 +110,14 @@ public class OrderGenerator
         private final long maxCustomerKey;
 
         private long index;
-        private int dataSize;
+        private long counter = 0;
+        private int[] dataBlock;
 
-        private OrderGeneratorIterator(Distributions distributions, TextPool textPool, double scaleFactor, int dataSize, long startIndex, long rowCount)
+        private OrderGeneratorIterator(Distributions distributions, TextPool textPool, double scaleFactor, int[] dataBlock, long startIndex, long rowCount)
         {
             this.startIndex = startIndex;
             this.rowCount = rowCount;
-            this.dataSize = dataSize;
+            this.dataBlock = dataBlock;
 
             clerkRandom = new RandomBoundedInt(1171034773, 1, Math.max((int) (scaleFactor * CLERK_SCALE_BASE), CLERK_SCALE_BASE));
 
@@ -144,7 +150,13 @@ public class OrderGenerator
                 return endOfData();
             }
 
-            Order order = makeOrder(startIndex + index + 1);
+            if (index <= (dataBlock[0]-1)*dataBlock[1]) {
+                if ((startIndex + counter + 1) > dataBlock[1]) {
+                    counter = 0;
+                }
+            }
+
+            Order order = makeOrder(startIndex + counter + 1);
 
             orderDateRandom.rowFinished();
             lineCountRandom.rowFinished();
@@ -159,6 +171,7 @@ public class OrderGenerator
             lineTaxRandom.rowFinished();
             linePartKeyRandom.rowFinished();
 
+            counter++;
             index++;
 
             return order;

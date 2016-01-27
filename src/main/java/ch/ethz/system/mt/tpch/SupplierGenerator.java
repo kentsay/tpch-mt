@@ -46,7 +46,9 @@ public class SupplierGenerator
 
     private final Distributions distributions;
     private final TextPool textPool;
+    public int tenantSize = 0;
     public int dataPerTenant = 0;
+    public int lastTenantData = 0;
 
     public SupplierGenerator(double scaleFactor, int part, int partCount, int tenantSize)
     {
@@ -63,7 +65,9 @@ public class SupplierGenerator
         this.scaleFactor = scaleFactor;
         this.part = part;
         this.partCount = partCount;
-        this.dataPerTenant = (int) calculateRowCount(SCALE_BASE, scaleFactor, part, partCount)/tenantSize;
+        this.tenantSize = tenantSize;
+        this.dataPerTenant  = (int) calculateRowCount(SCALE_BASE, scaleFactor, part, partCount)/tenantSize;
+        this.lastTenantData = this.dataPerTenant + (int) calculateRowCount(SCALE_BASE, scaleFactor, part, partCount) % tenantSize;
 
         this.distributions = checkNotNull(distributions, "distributions is null");
         this.textPool = checkNotNull(textPool, "textPool is null");
@@ -75,7 +79,7 @@ public class SupplierGenerator
         return new SupplierGeneratorIterator(
                 distributions,
                 textPool,
-                dataPerTenant,
+                new int[] {tenantSize, dataPerTenant, lastTenantData},
                 calculateStartIndex(SCALE_BASE, scaleFactor, part, partCount),
                 calculateRowCount(SCALE_BASE, scaleFactor, part, partCount));
     }
@@ -98,13 +102,13 @@ public class SupplierGenerator
 
         private long index;
         private long counter = 0;
-        private int dataSize;
+        private int[] dataBlock;
 
-        private SupplierGeneratorIterator(Distributions distributions, TextPool textPool, int dataSize, long startIndex, long rowCount)
+        private SupplierGeneratorIterator(Distributions distributions, TextPool textPool, int[] dataBlock, long startIndex, long rowCount)
         {
             this.startIndex = startIndex;
             this.rowCount = rowCount;
-            this.dataSize = dataSize;
+            this.dataBlock = dataBlock;
 
             nationKeyRandom = new RandomBoundedInt(110356601, 0, distributions.getNations().size() - 1);
             commentRandom = new RandomText(1341315363, textPool, COMMENT_AVERAGE_LENGTH);
@@ -127,8 +131,10 @@ public class SupplierGenerator
                 return endOfData();
             }
 
-            if ((startIndex + counter + 1) > dataSize) {
-                counter = 0;
+            if (index <= (dataBlock[0]-1)*dataBlock[1]) {
+                if ((startIndex + counter + 1) > dataBlock[1]) {
+                    counter = 0;
+                }
             }
 
             Supplier supplier = makeSupplier(startIndex + counter + 1);

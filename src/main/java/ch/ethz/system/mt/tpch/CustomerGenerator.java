@@ -35,7 +35,10 @@ public class CustomerGenerator
     private final double scaleFactor;
     private final int part;
     private final int partCount;
-    int dataPerTenant = 0;
+
+    public int tenantSize = 0;
+    public int dataPerTenant = 0;
+    public int lastTenantData = 0;
 
     private final Distributions distributions;
     private final TextPool textPool;
@@ -55,7 +58,9 @@ public class CustomerGenerator
         this.scaleFactor = scaleFactor;
         this.part = part;
         this.partCount = partCount;
-        this.dataPerTenant = (int) calculateRowCount(SCALE_BASE, scaleFactor, part, partCount)/tenantSize;
+        this.tenantSize = tenantSize;
+        this.dataPerTenant  = (int) calculateRowCount(SCALE_BASE, scaleFactor, part, partCount)/tenantSize;
+        this.lastTenantData = this.dataPerTenant + (int) calculateRowCount(SCALE_BASE, scaleFactor, part, partCount) % tenantSize;
 
         this.distributions = checkNotNull(distributions, "distributions is null");
         this.textPool = checkNotNull(textPool, "textPool is null");
@@ -68,7 +73,7 @@ public class CustomerGenerator
         return new CustomerGeneratorIterator(
                 distributions,
                 textPool,
-                dataPerTenant,
+                new int[] {tenantSize, dataPerTenant, lastTenantData},
                 calculateStartIndex(SCALE_BASE, scaleFactor, part, partCount),
                 calculateRowCount(SCALE_BASE, scaleFactor, part, partCount));
     }
@@ -88,13 +93,13 @@ public class CustomerGenerator
 
         private long index;
         private long counter = 0;
-        private int dataSize;
+        private int[] dataBlock;
 
-        private CustomerGeneratorIterator(Distributions distributions, TextPool textPool, int dataSize, long startIndex, long rowCount)
+        private CustomerGeneratorIterator(Distributions distributions, TextPool textPool, int[] dataBlock, long startIndex, long rowCount)
         {
             this.startIndex = startIndex;
             this.rowCount = rowCount;
-            this.dataSize = dataSize;
+            this.dataBlock = dataBlock;
 
             nationKeyRandom = new RandomBoundedInt(1489529863, 0, distributions.getNations().size() - 1);
             marketSegmentRandom = new RandomString(1140279430, distributions.getMarketSegments());
@@ -115,10 +120,12 @@ public class CustomerGenerator
                 return endOfData();
             }
 
-            if ((startIndex + counter + 1) > dataSize) {
-                counter = 0;
+            if (index <= (dataBlock[0]-1)*dataBlock[1]) {
+                if ((startIndex + counter + 1) > dataBlock[1]) {
+                    counter = 0;
+                }
             }
-//            Customer customer = makeCustomer(startIndex + index + 1);
+
             Customer customer = makeCustomer(startIndex + counter + 1);
 
             addressRandom.rowFinished();
