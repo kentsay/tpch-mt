@@ -1,5 +1,6 @@
 package ch.ethz.system.mt.tpch;
 
+import com.google.common.collect.Iterators;
 import org.apache.commons.cli.*;
 import org.apache.commons.math3.distribution.ZipfDistribution;
 import util.DbGenUtil;
@@ -95,8 +96,11 @@ public class dbgen {
 
                     /*** Lineitem Table Generator ***/
                     LineItemGenerator lineItemGenerator = new LineItemGenerator(scaleFactor, part, numberOfParts, tenant);
+                    int lineItemRowCount = Iterators.size(lineItemGenerator.iterator()); //get the real size of lineItem from LineItemGenerator
+                    lineItemGenerator = new LineItemGenerator(scaleFactor, part, numberOfParts, tenant, lineItemRowCount); //use the real row count to generate new data
                     dataSize = DbGenUtil.dataSizeArray(tenant, lineItemGenerator.dataPerTenant, lineItemGenerator.lastTenantData);
                     writer = new FileWriter(OUTPUT_DIRECTORY + "//lineitem.tbl");
+
                     DbGenUtil.generator(lineItemGenerator, dataSize, writer);
 
                     /*** Orders Table Generator ***/

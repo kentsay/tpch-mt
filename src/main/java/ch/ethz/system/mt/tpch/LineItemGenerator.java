@@ -64,6 +64,27 @@ public class LineItemGenerator
         this(scaleFactor, part, partCount, tenantSize, Distributions.getDefaultDistributions(), TextPool.getDefaultTestPool());
     }
 
+    public LineItemGenerator(double scaleFactor, int part, int partCount, int tenantSize, int rowCount) {
+        this(scaleFactor, part, partCount, tenantSize, rowCount, Distributions.getDefaultDistributions(), TextPool.getDefaultTestPool());
+    }
+
+    public LineItemGenerator(double scaleFactor, int part, int partCount, int tenantSize, int rowCount, Distributions distributions, TextPool textPool) {
+        checkArgument(scaleFactor > 0, "scaleFactor must be greater than 0");
+        checkArgument(part >= 1, "part must be at least 1");
+        checkArgument(part <= partCount, "part must be less than or equal to part count");
+        checkArgument(tenantSize > 0, "tenant number must be greater than 0");
+
+        this.scaleFactor = scaleFactor;
+        this.part = part;
+        this.partCount = partCount;
+        this.tenantSize = tenantSize;
+        this.dataPerTenant = rowCount/tenantSize;
+        this.lastTenantData = this.dataPerTenant + (rowCount % tenantSize);
+
+        this.distributions = checkNotNull(distributions, "distributions is null");
+        this.textPool = checkNotNull(textPool, "textPool is null");
+    }
+
     public LineItemGenerator(double scaleFactor, int part, int partCount, int tenantSize, Distributions distributions, TextPool textPool)
     {
         checkArgument(scaleFactor > 0, "scaleFactor must be greater than 0");
@@ -77,10 +98,6 @@ public class LineItemGenerator
         this.tenantSize = tenantSize;
         this.dataPerTenant = (int) GenerateUtils.calculateRowCount(OrderGenerator.SCALE_BASE, scaleFactor, part, partCount)/tenantSize;
         this.lastTenantData = this.dataPerTenant + (int) GenerateUtils.calculateRowCount(OrderGenerator.SCALE_BASE, scaleFactor, part, partCount) % tenantSize;
-
-        System.out.println("###" + GenerateUtils.calculateRowCount(OrderGenerator.SCALE_BASE, scaleFactor, part, partCount));
-        System.out.println("###" + this.dataPerTenant);
-        System.out.println("###" + this.lastTenantData);
 
         this.distributions = checkNotNull(distributions, "distributions is null");
         this.textPool = checkNotNull(textPool, "textPool is null");
@@ -133,12 +150,14 @@ public class LineItemGenerator
         private int lineNumber;
 
         private int[] dataBlock;
+        private int counter = 0;
 
         private LineItemGeneratorIterator(Distributions distributions, TextPool textPool, double scaleFactor, int[] dataBlock, long startIndex, long rowCount)
         {
             this.scaleFactor = scaleFactor;
             this.startIndex = startIndex;
             this.rowCount = rowCount;
+            this.dataBlock = dataBlock;
 
             returnedFlagRandom = new RandomString(717419739, distributions.getReturnFlags(), LINE_COUNT_MAX);
             shipInstructionsRandom = new RandomString(1371272478, distributions.getShipInstructions(), LINE_COUNT_MAX);
@@ -181,7 +200,13 @@ public class LineItemGenerator
                 return endOfData();
             }
 
-            LineItem lineitem = makeLineitem(startIndex + index + 1);
+            if (index <= (dataBlock[0]-1)*dataBlock[1]) {
+                if ((startIndex + counter + 1) > dataBlock[1]) {
+                    counter = 0;
+                }
+            }
+
+            LineItem lineitem = makeLineitem(startIndex + counter + 1);
             lineNumber++;
 
             // advance next row only when all lines for the order have been produced
@@ -208,6 +233,7 @@ public class LineItemGenerator
                 commentRandom.rowFinished();
 
                 index++;
+                counter++;
 
                 // generate information for next order
                 lineCount = lineCountRandom.nextValue() - 1;
