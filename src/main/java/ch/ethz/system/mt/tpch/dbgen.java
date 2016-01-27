@@ -111,19 +111,22 @@ public class dbgen {
 
                     System.out.println("### DB Generate Done");
 
-//            writer = new FileWriter("nation.tbl");
-//            for (Nation entity : new NationGenerator(scaleFactor, part, numberOfParts)) {
-//                writer.write(entity.toLine());
-//                writer.write('\n');
-//            }
-//            writer.close();
-//
-//            writer = new FileWriter("region.tbl");
-//            for (Region entity : new RegionGenerator(scaleFactor, part, numberOfParts)) {
-//                writer.write(entity.toLine());
-//                writer.write('\n');
-//            }
-//            writer.close();
+
+                    /*** Nation Table Generator ***/
+                    writer = new FileWriter(OUTPUT_DIRECTORY + "//nation.tbl");
+                    for (Nation entity : new NationGenerator()) {
+                        writer.write(entity.toLine());
+                        writer.write('\n');
+                    }
+                    writer.close();
+
+                    /*** Region Table Generator ***/
+                    writer = new FileWriter(OUTPUT_DIRECTORY + "//region.tbl");
+                    for (Region entity : new RegionGenerator()) {
+                        writer.write(entity.toLine());
+                        writer.write('\n');
+                    }
+                    writer.close();
 
                 } catch (IOException e) {
                     e.printStackTrace();
