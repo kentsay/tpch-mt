@@ -32,7 +32,7 @@ public class DbGenUtil {
         }
     }
 
-    public static int[] dataSizeArray(int numOfTenant, int normalSize, int lastSize) {
+    public static int[] uniformDataDist(int numOfTenant, int normalSize, int lastSize) {
         int[] dataSize = new int[numOfTenant];
         for (int i = 0; i < numOfTenant; i++) {
             dataSize[i] = normalSize;
@@ -46,11 +46,9 @@ public class DbGenUtil {
         ZipfDistribution distribution = new ZipfDistribution(numOfTenant,1);
         int sum = 0;
         int probability = 0;
-        System.out.println("######### Zipf Dist #########");
         for (int i = 1; i <= numOfTenant; i++) {
             probability = (int) Math.floor(distribution.probability(i)*rowCount);
             dataDist[i-1] = probability;
-            System.out.println(probability);
             sum = sum + probability;
         }
         dataDist[0] = dataDist[0] + (rowCount-sum);

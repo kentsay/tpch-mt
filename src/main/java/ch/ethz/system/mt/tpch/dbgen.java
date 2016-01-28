@@ -31,7 +31,10 @@ public class dbgen {
         int part = 1;
         int numberOfParts = 1500; //adjust this value for different parts of data
         int tenant = 1; //set default value for tenant number
-        int[] dataSize;
+        int[] custDataSize     = new int[tenant];
+        int[] lineItemDataSize = new int[tenant];
+        int[] orderDataSize    = new int[tenant];
+        int[] suppDataSize     = new int[tenant];
         String disMode = "uniform"; //set default value for distribution mode
 
         Options options = new Options();
@@ -57,7 +60,7 @@ public class dbgen {
             }
             if (cmd.hasOption("m")) {
                 String mode = cmd.getOptionValue("m");
-                if (mode != "uniform" | mode != "zipf" ) {
+                if (!String.valueOf(mode).equals("uniform") && !String.valueOf(mode).equals("zipf") ) {
                     System.out.println("Distribution mode cannot be recognise. Try <uniform> or <zipf>");
                     System.exit(0);
                 } else {
@@ -73,106 +76,86 @@ public class dbgen {
 
         System.out.println("### DB Generate Start");
 
+        CustomerGenerator customerGenerator = new CustomerGenerator(scaleFactor, part, numberOfParts, tenant);
+        SupplierGenerator supplierGenerator = new SupplierGenerator(scaleFactor, part, numberOfParts, tenant);
+
+        LineItemGenerator lineItemGenerator = new LineItemGenerator(scaleFactor, part, numberOfParts, tenant);
+        int lineItemRowCount = Iterators.size(lineItemGenerator.iterator()); //get the real size of lineItem from LineItemGenerator
+        lineItemGenerator = new LineItemGenerator(scaleFactor, part, numberOfParts, tenant, lineItemRowCount); //use the real row count to generate new data
+
+        OrderGenerator orderGenerator = new OrderGenerator(scaleFactor, part, numberOfParts, tenant);
+
         switch(disMode) {
             case "uniform":
-                try {
-                    /*** Customer Table Generator ***/
-                    CustomerGenerator customerGenerator = new CustomerGenerator(scaleFactor, part, numberOfParts, tenant);
-                    dataSize = DbGenUtil.uniformDataDist(tenant, customerGenerator.dataPerTenant, customerGenerator.lastTenantData);
-
-                    file = new File(OUTPUT_DIRECTORY + "//customer.tbl");
-                    FileUtil.checkParentDirector(file); //check and create output directory
-                    writer = new FileWriter(file);
-                    DbGenUtil.generator(customerGenerator, dataSize, writer);
-
-                    /*** Supplier Table Generator ***/
-                    SupplierGenerator supplierGenerator = new SupplierGenerator(scaleFactor, part, numberOfParts, tenant);
-                    dataSize = DbGenUtil.uniformDataDist(tenant, supplierGenerator.dataPerTenant, supplierGenerator.lastTenantData);
-                    writer = new FileWriter(OUTPUT_DIRECTORY + "//supplier.tbl");
-                    DbGenUtil.generator(supplierGenerator, dataSize, writer);
-
-                    /*** Lineitem Table Generator ***/
-                    LineItemGenerator lineItemGenerator = new LineItemGenerator(scaleFactor, part, numberOfParts, tenant);
-                    int lineItemRowCount = Iterators.size(lineItemGenerator.iterator()); //get the real size of lineItem from LineItemGenerator
-                    lineItemGenerator = new LineItemGenerator(scaleFactor, part, numberOfParts, tenant, lineItemRowCount); //use the real row count to generate new data
-                    dataSize = DbGenUtil.uniformDataDist(tenant, lineItemGenerator.dataPerTenant, lineItemGenerator.lastTenantData);
-                    writer = new FileWriter(OUTPUT_DIRECTORY + "//lineitem.tbl");
-
-                    DbGenUtil.generator(lineItemGenerator, dataSize, writer);
-
-                    /*** Orders Table Generator ***/
-                    OrderGenerator orderGenerator = new OrderGenerator(scaleFactor, part, numberOfParts, tenant);
-                    dataSize = DbGenUtil.uniformDataDist(tenant, orderGenerator.dataPerTenant, orderGenerator.lastTenantData);
-                    writer = new FileWriter(OUTPUT_DIRECTORY + "//orders.tbl");
-                    DbGenUtil.generator(orderGenerator, dataSize, writer);
-
-                    /*** Nation Table Generator ***/
-                    writer = new FileWriter(OUTPUT_DIRECTORY + "//nation.tbl");
-                    for (Nation entity : new NationGenerator()) {
-                        writer.write(entity.toLine());
-                        writer.write('\n');
-                    }
-                    writer.close();
-
-                    /*** Region Table Generator ***/
-                    writer = new FileWriter(OUTPUT_DIRECTORY + "//region.tbl");
-                    for (Region entity : new RegionGenerator()) {
-                        writer.write(entity.toLine());
-                        writer.write('\n');
-                    }
-                    writer.close();
-
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+                custDataSize     = DbGenUtil.uniformDataDist(tenant, customerGenerator.dataPerTenant, customerGenerator.lastTenantData);
+                suppDataSize     = DbGenUtil.uniformDataDist(tenant, supplierGenerator.dataPerTenant, supplierGenerator.lastTenantData);
+                lineItemDataSize = DbGenUtil.uniformDataDist(tenant, lineItemGenerator.dataPerTenant, lineItemGenerator.lastTenantData);
+                orderDataSize    = DbGenUtil.uniformDataDist(tenant, orderGenerator.dataPerTenant, orderGenerator.lastTenantData);
                 break;
             case "zipf":
-                try {
-                    /*** Customer Table Generator ***/
-                    CustomerGenerator customerGenerator = new CustomerGenerator(scaleFactor, part, numberOfParts, tenant);
-                    int rowCount = Iterators.size(customerGenerator.iterator());
-                    dataSize = DbGenUtil.zipfDataDist(tenant, rowCount);
 
-                    file = new File(OUTPUT_DIRECTORY + "//customer.tbl");
-                    FileUtil.checkParentDirector(file); //check and create output directory
-                    writer = new FileWriter(file);
+                int rowCount = Iterators.size(customerGenerator.iterator());
+                custDataSize = DbGenUtil.zipfDataDist(tenant, rowCount);
 
-                    DbGenUtil.generator(customerGenerator, dataSize, writer);
+                rowCount = Iterators.size(supplierGenerator.iterator());
+                suppDataSize = DbGenUtil.zipfDataDist(tenant, rowCount);
 
-                    /*** Supplier Table Generator ***/
-                    SupplierGenerator supplierGenerator = new SupplierGenerator(scaleFactor, part, numberOfParts, tenant);
-                    rowCount = Iterators.size(supplierGenerator.iterator());
-                    dataSize = DbGenUtil.zipfDataDist(tenant, rowCount);
+                lineItemRowCount = Iterators.size(lineItemGenerator.iterator());
+                lineItemGenerator = new LineItemGenerator(scaleFactor, part, numberOfParts, tenant, lineItemRowCount); //use the real row count to generate new data
+                rowCount = lineItemRowCount;
+                lineItemDataSize = DbGenUtil.zipfDataDist(tenant, rowCount);
 
-                    writer = new FileWriter(OUTPUT_DIRECTORY + "//supplier.tbl");
-
-                    DbGenUtil.generator(supplierGenerator, dataSize, writer);
-
-                    /*** Lineitem Table Generator ***/
-                    LineItemGenerator lineItemGenerator = new LineItemGenerator(scaleFactor, part, numberOfParts, tenant);
-                    int lineItemRowCount = Iterators.size(lineItemGenerator.iterator()); //get the real size of lineItem from LineItemGenerator
-                    lineItemGenerator = new LineItemGenerator(scaleFactor, part, numberOfParts, tenant, lineItemRowCount); //use the real row count to generate new data
-                    rowCount = lineItemRowCount;
-                    dataSize = DbGenUtil.zipfDataDist(tenant, rowCount);
-
-                    writer = new FileWriter(OUTPUT_DIRECTORY + "//lineitem.tbl");
-
-                    DbGenUtil.generator(lineItemGenerator, dataSize, writer);
-
-                    /*** Orders Table Generator ***/
-                    OrderGenerator orderGenerator = new OrderGenerator(scaleFactor, part, numberOfParts, tenant);
-                    rowCount = Iterators.size(orderGenerator.iterator());
-                    dataSize = DbGenUtil.zipfDataDist(tenant, rowCount);
-
-                    writer = new FileWriter(OUTPUT_DIRECTORY + "//orders.tbl");
-
-                    DbGenUtil.generator(orderGenerator, dataSize, writer);
-
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+                rowCount = Iterators.size(orderGenerator.iterator());
+                orderDataSize = DbGenUtil.zipfDataDist(tenant, rowCount);
                 break;
         }
+
+        try {
+            /*** Customer Table Generator ***/
+            file = new File(OUTPUT_DIRECTORY + "//customer.tbl");
+            FileUtil.checkParentDirector(file); //check and create output directory
+            writer = new FileWriter(file);
+
+            System.out.println("Generating data for customers table");
+            DbGenUtil.generator(customerGenerator, custDataSize, writer);
+
+            /*** Supplier Table Generator ***/
+            writer = new FileWriter(OUTPUT_DIRECTORY + "//supplier.tbl");
+            System.out.println("Generating data for supplier table");
+            DbGenUtil.generator(supplierGenerator, suppDataSize, writer);
+
+            /*** Lineitem Table Generator ***/
+            writer = new FileWriter(OUTPUT_DIRECTORY + "//lineitem.tbl");
+            System.out.println("Generating data for lineitem table");
+            DbGenUtil.generator(lineItemGenerator, lineItemDataSize, writer);
+
+            /*** Orders Table Generator ***/
+            writer = new FileWriter(OUTPUT_DIRECTORY + "//orders.tbl");
+            System.out.println("Generating data for orders table");
+            DbGenUtil.generator(orderGenerator, orderDataSize, writer);
+
+            /*** Nation Table Generator ***/
+            writer = new FileWriter(OUTPUT_DIRECTORY + "//nation.tbl");
+            System.out.println("Generating data for nation table");
+            for (Nation entity : new NationGenerator()) {
+                writer.write(entity.toLine());
+                writer.write('\n');
+            }
+            writer.close();
+
+            /*** Region Table Generator ***/
+            writer = new FileWriter(OUTPUT_DIRECTORY + "//region.tbl");
+            System.out.println("Generating data for region table");
+            for (Region entity : new RegionGenerator()) {
+                writer.write(entity.toLine());
+                writer.write('\n');
+            }
+            writer.close();
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
         System.out.println("### DB Generate Done");
     }
 }
