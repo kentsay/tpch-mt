@@ -2,7 +2,6 @@ package ch.ethz.system.mt.tpch;
 
 import com.google.common.collect.Iterators;
 import org.apache.commons.cli.*;
-import org.apache.commons.math3.distribution.ZipfDistribution;
 import util.DbGenUtil;
 import util.FileUtil;
 
@@ -74,11 +73,11 @@ public class dbgen {
         Writer writer;
         File file;
 
+        System.out.println("### DB Generate Start");
+
         switch(disMode) {
             case "uniform":
                 try {
-                    System.out.println("### DB Generate Start");
-
                     /*** Customer Table Generator ***/
                     CustomerGenerator customerGenerator = new CustomerGenerator(scaleFactor, part, numberOfParts, tenant);
                     dataSize = DbGenUtil.dataSizeArray(tenant, customerGenerator.dataPerTenant, customerGenerator.lastTenantData);
@@ -109,9 +108,6 @@ public class dbgen {
                     writer = new FileWriter(OUTPUT_DIRECTORY + "//orders.tbl");
                     DbGenUtil.generator(orderGenerator, dataSize, writer);
 
-                    System.out.println("### DB Generate Done");
-
-
                     /*** Nation Table Generator ***/
                     writer = new FileWriter(OUTPUT_DIRECTORY + "//nation.tbl");
                     for (Nation entity : new NationGenerator()) {
@@ -132,11 +128,53 @@ public class dbgen {
                     e.printStackTrace();
                 }
                 break;
-            case "zipfs":
-                //TODO
-                ZipfDistribution distribution = new ZipfDistribution(10,1);
+            case "zipf":
+                try {
+                    /*** Customer Table Generator ***/
+                    CustomerGenerator customerGenerator = new CustomerGenerator(scaleFactor, part, numberOfParts, tenant);
+                    int rowCount = Iterators.size(customerGenerator.iterator());
+                    dataSize = DbGenUtil.zipfDataDist(tenant, rowCount);
 
-                System.out.printf(String.valueOf(distribution.getExponent()));
+                    file = new File(OUTPUT_DIRECTORY + "//customer.tbl");
+                    FileUtil.checkParentDirector(file); //check and create output directory
+                    writer = new FileWriter(file);
+
+                    DbGenUtil.generator(customerGenerator, dataSize, writer);
+
+                    /*** Supplier Table Generator ***/
+                    SupplierGenerator supplierGenerator = new SupplierGenerator(scaleFactor, part, numberOfParts, tenant);
+                    rowCount = Iterators.size(supplierGenerator.iterator());
+                    dataSize = DbGenUtil.zipfDataDist(tenant, rowCount);
+
+                    writer = new FileWriter(OUTPUT_DIRECTORY + "//supplier.tbl");
+
+                    DbGenUtil.generator(supplierGenerator, dataSize, writer);
+
+                    /*** Lineitem Table Generator ***/
+                    LineItemGenerator lineItemGenerator = new LineItemGenerator(scaleFactor, part, numberOfParts, tenant);
+                    int lineItemRowCount = Iterators.size(lineItemGenerator.iterator()); //get the real size of lineItem from LineItemGenerator
+                    lineItemGenerator = new LineItemGenerator(scaleFactor, part, numberOfParts, tenant, lineItemRowCount); //use the real row count to generate new data
+                    rowCount = lineItemRowCount;
+                    dataSize = DbGenUtil.zipfDataDist(tenant, rowCount);
+
+                    writer = new FileWriter(OUTPUT_DIRECTORY + "//lineitem.tbl");
+
+                    DbGenUtil.generator(lineItemGenerator, dataSize, writer);
+
+                    /*** Orders Table Generator ***/
+                    OrderGenerator orderGenerator = new OrderGenerator(scaleFactor, part, numberOfParts, tenant);
+                    rowCount = Iterators.size(orderGenerator.iterator());
+                    dataSize = DbGenUtil.zipfDataDist(tenant, rowCount);
+
+                    writer = new FileWriter(OUTPUT_DIRECTORY + "//orders.tbl");
+
+                    DbGenUtil.generator(orderGenerator, dataSize, writer);
+
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+                System.out.println("### DB Generate Done");
                 break;
         }
     }

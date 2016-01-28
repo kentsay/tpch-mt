@@ -3,6 +3,7 @@ package util;
 import ch.ethz.system.mt.tpch.TpchSchemaInterface;
 import ch.ethz.system.mt.tpch.TpchEntity;
 import com.google.common.collect.Iterators;
+import org.apache.commons.math3.distribution.ZipfDistribution;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -38,5 +39,21 @@ public class DbGenUtil {
         }
         dataSize[numOfTenant-1] = lastSize;
         return dataSize;
+    }
+
+    public static int[] zipfDataDist(int numOfTenant, int rowCount) {
+        int[] dataDist = new int[numOfTenant];
+        ZipfDistribution distribution = new ZipfDistribution(numOfTenant,1);
+        int sum = 0;
+        int probability = 0;
+        System.out.println("######### Zipf Dist #########");
+        for (int i = 1; i <= numOfTenant; i++) {
+            probability = (int) Math.floor(distribution.probability(i)*rowCount);
+            dataDist[i-1] = probability;
+            System.out.println(probability);
+            sum = sum + probability;
+        }
+        dataDist[0] = dataDist[0] + (rowCount-sum);
+        return dataDist;
     }
 }
