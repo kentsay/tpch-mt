@@ -11,17 +11,15 @@ import java.io.IOException;
 import java.io.Writer;
 
 /**
- * Created by kentsay on 14/01/2016.
  * Entry point to generation database data for Multi-tenant version TPC-H benchmark
  */
 
 /**
  * TODO List
  *  1. config file for table we want to generate
- *  2. add MT features
- *      - tenant key
- *      - data distribution mode: uniform
- *      - data distribution mode: zipf
+ *  2. fix foreign key issues
+ *  3. add checking script/code to guarantee the tuple exists
+ *  5. change phone format - random choose format, and then generate data accordingly
  */
 public class dbgen {
 
@@ -31,10 +29,10 @@ public class dbgen {
 
         double scaleFactor = 1; //set default value for Scale Factor
         int part = 1;
-        int numberOfParts = 1500;
-        int tenant = 1;
+        int numberOfParts = 1500; //adjust this value for different parts of data
+        int tenant = 1; //set default value for tenant number
         int[] dataSize;
-        String disMode = null;
+        String disMode = "uniform"; //set default value for distribution mode
 
         Options options = new Options();
         options.addOption("h", false, "-- display this message");
@@ -53,18 +51,18 @@ public class dbgen {
             }
             if (cmd.hasOption("s")) {
                 scaleFactor = Double.parseDouble(cmd.getOptionValue("s"));
-            } else {
-                scaleFactor = 1;
             }
             if (cmd.hasOption("t")) {
                 tenant = Integer.parseInt(cmd.getOptionValue("t"));
-            } else {
-                tenant = 1; //set default value for tenant number
             }
             if (cmd.hasOption("m")) {
-                disMode = cmd.getOptionValue("m");
-            } else {
-                disMode = "uniform"; //set default value for distribution mode
+                String mode = cmd.getOptionValue("m");
+                if (mode != "uniform" | mode != "zipf" ) {
+                    System.out.println("Distribution mode cannot be recognise. Try <uniform> or <zipf>");
+                    System.exit(0);
+                } else {
+                    disMode = mode;
+                }
             }
         } catch (ParseException e) {
             e.printStackTrace();
@@ -80,7 +78,7 @@ public class dbgen {
                 try {
                     /*** Customer Table Generator ***/
                     CustomerGenerator customerGenerator = new CustomerGenerator(scaleFactor, part, numberOfParts, tenant);
-                    dataSize = DbGenUtil.dataSizeArray(tenant, customerGenerator.dataPerTenant, customerGenerator.lastTenantData);
+                    dataSize = DbGenUtil.uniformDataDist(tenant, customerGenerator.dataPerTenant, customerGenerator.lastTenantData);
 
                     file = new File(OUTPUT_DIRECTORY + "//customer.tbl");
                     FileUtil.checkParentDirector(file); //check and create output directory
@@ -89,7 +87,7 @@ public class dbgen {
 
                     /*** Supplier Table Generator ***/
                     SupplierGenerator supplierGenerator = new SupplierGenerator(scaleFactor, part, numberOfParts, tenant);
-                    dataSize = DbGenUtil.dataSizeArray(tenant, supplierGenerator.dataPerTenant, supplierGenerator.lastTenantData);
+                    dataSize = DbGenUtil.uniformDataDist(tenant, supplierGenerator.dataPerTenant, supplierGenerator.lastTenantData);
                     writer = new FileWriter(OUTPUT_DIRECTORY + "//supplier.tbl");
                     DbGenUtil.generator(supplierGenerator, dataSize, writer);
 
@@ -97,14 +95,14 @@ public class dbgen {
                     LineItemGenerator lineItemGenerator = new LineItemGenerator(scaleFactor, part, numberOfParts, tenant);
                     int lineItemRowCount = Iterators.size(lineItemGenerator.iterator()); //get the real size of lineItem from LineItemGenerator
                     lineItemGenerator = new LineItemGenerator(scaleFactor, part, numberOfParts, tenant, lineItemRowCount); //use the real row count to generate new data
-                    dataSize = DbGenUtil.dataSizeArray(tenant, lineItemGenerator.dataPerTenant, lineItemGenerator.lastTenantData);
+                    dataSize = DbGenUtil.uniformDataDist(tenant, lineItemGenerator.dataPerTenant, lineItemGenerator.lastTenantData);
                     writer = new FileWriter(OUTPUT_DIRECTORY + "//lineitem.tbl");
 
                     DbGenUtil.generator(lineItemGenerator, dataSize, writer);
 
                     /*** Orders Table Generator ***/
                     OrderGenerator orderGenerator = new OrderGenerator(scaleFactor, part, numberOfParts, tenant);
-                    dataSize = DbGenUtil.dataSizeArray(tenant, orderGenerator.dataPerTenant, orderGenerator.lastTenantData);
+                    dataSize = DbGenUtil.uniformDataDist(tenant, orderGenerator.dataPerTenant, orderGenerator.lastTenantData);
                     writer = new FileWriter(OUTPUT_DIRECTORY + "//orders.tbl");
                     DbGenUtil.generator(orderGenerator, dataSize, writer);
 
@@ -173,9 +171,8 @@ public class dbgen {
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-
-                System.out.println("### DB Generate Done");
                 break;
         }
+        System.out.println("### DB Generate Done");
     }
 }
