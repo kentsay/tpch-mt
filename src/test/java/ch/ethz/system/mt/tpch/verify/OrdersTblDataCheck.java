@@ -1,7 +1,6 @@
 package ch.ethz.system.mt.tpch.verify;
 
-
-import org.testng.annotations.AfterSuite;
+import org.testng.Assert;
 import org.testng.annotations.BeforeSuite;
 import org.testng.annotations.Test;
 
@@ -111,24 +110,27 @@ public class OrdersTblDataCheck {
     }
 
     @Test
-    public void testDataNotEmpyt() {
-        System.out.println(orderMap.get("1"));
-        System.out.println(orderMap.get("2"));
-        System.out.println(orderMap.get("3"));
-        System.out.println(orderMap.get("4"));
-        System.out.println(orderMap.get("5"));
-
-        System.out.println(customerMap.get("1"));
-        System.out.println(customerMap.get("2"));
+    public void testMapNotEmpyt() {
+        Assert.assertNotNull(orderMap);
+        Assert.assertNotNull(customerMap);
     }
 
-    @Test
+    @Test(dependsOnMethods = {"testMapNotEmpyt"})
     public void testDataMatch() {
-
+        for(String tid: orderMap.keySet()) {
+            for(String orderKey: orderMap.get(tid).keySet()) {
+                String custKey = orderMap.get(tid).get(orderKey);
+                if (!customerIdExists(tid, custKey)) {
+                    System.out.println("Tenant id: " + tid + " with CustomerKey: " + custKey + " cannot be found");
+                }
+            }
+        }
     }
 
-    @AfterSuite
-    public void terminate() {
-
+    public boolean customerIdExists(String tid, String id) {
+        if (tid != null && id != null) {
+            return customerMap.get(tid).contains(id);
+        } else return false;
     }
+
 }
