@@ -36,7 +36,7 @@ public class CustomerGenerator
     private final int part;
     private final int partCount;
 
-    public int tenantSize = 0;
+    public static int tenantSize = 0;
     public int dataPerTenant = 0;
     public int lastTenantData = 0;
 

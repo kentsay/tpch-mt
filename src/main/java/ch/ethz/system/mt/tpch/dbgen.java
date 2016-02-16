@@ -18,8 +18,7 @@ import java.io.Writer;
  * TODO List
  *  1. config file for table we want to generate
  *  2. fix foreign key issues
- *  3. add checking script/code to guarantee the tuple exists
- *  5. change phone format - random choose format, and then generate data accordingly
+ *  3. change phone format - random choose format, and then generate data accordingly
  */
 public class dbgen {
 
@@ -29,7 +28,7 @@ public class dbgen {
 
         double scaleFactor = 1; //set default value for Scale Factor
         int part = 1;
-        int numberOfParts = 1500; //adjust this value for different parts of data
+        int numberOfParts = 1; //adjust this value for different parts of data
         int tenant = 1; //set default value for tenant number
         int[] custDataSize     = new int[tenant];
         int[] lineItemDataSize = new int[tenant];

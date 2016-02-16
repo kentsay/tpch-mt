@@ -121,7 +121,7 @@ public class OrderGenerator
 
             clerkRandom = new RandomBoundedInt(1171034773, 1, Math.max((int) (scaleFactor * CLERK_SCALE_BASE), CLERK_SCALE_BASE));
 
-            maxCustomerKey = (long) (CustomerGenerator.SCALE_BASE * scaleFactor);
+            maxCustomerKey = (long) ((CustomerGenerator.SCALE_BASE * scaleFactor)/CustomerGenerator.tenantSize);
             customerKeyRandom = new RandomBoundedLong(851767375, scaleFactor >= 30000, 1, maxCustomerKey);
 
             orderPriorityRandom = new RandomString(591449447, distributions.getOrderPriorities());
