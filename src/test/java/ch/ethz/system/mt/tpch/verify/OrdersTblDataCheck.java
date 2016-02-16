@@ -11,15 +11,12 @@ import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.StringTokenizer;
+import java.util.*;
 
 public class OrdersTblDataCheck {
 
     HashMap<String, HashMap<String, String>> orderMap = new HashMap<>();
-    HashMap<String, List<String>> customerMap = new HashMap<>();
+    HashMap<String, HashSet<String>> customerMap = new HashMap<>();
 
     @BeforeSuite
     public void init() throws IOException {
@@ -75,7 +72,7 @@ public class OrdersTblDataCheck {
         InputStream in = Files.newInputStream(fileName);
         BufferedReader bf = new BufferedReader(new InputStreamReader(in));
         String line;
-        ArrayList<String> list = new ArrayList<>();
+        HashSet<String> set = new HashSet<>();
 
         String currentTid = "1";
         while ((line = bf.readLine()) != null) {
@@ -95,16 +92,16 @@ public class OrdersTblDataCheck {
 
                 if (count == 2) {
                     if (!currentTid.equals(tid)) {
-                        customerMap.put(currentTid, list); // save current tenant data
+                        customerMap.put(currentTid, set); // save current tenant data
                         currentTid = tid; // move on to the next tenant
-                        list = new ArrayList<>();
+                        set = new HashSet<>();
                     }
-                    list.add(custid);
+                    set.add(custid);
                     break;
                 }
             }
         }
-        customerMap.put(currentTid, list); //save the last tenant data
+        customerMap.put(currentTid, set); //save the last tenant data
         bf.close();
         in.close();
     }
@@ -117,13 +114,20 @@ public class OrdersTblDataCheck {
 
     @Test(dependsOnMethods = {"testMapNotEmpyt"})
     public void testDataMatch() {
+        boolean dataCorrect = true;
         for(String tid: orderMap.keySet()) {
             for(String orderKey: orderMap.get(tid).keySet()) {
                 String custKey = orderMap.get(tid).get(orderKey);
                 if (!customerIdExists(tid, custKey)) {
+                    dataCorrect = false;
                     System.out.println("Tenant id: " + tid + " with CustomerKey: " + custKey + " cannot be found");
                 }
             }
+        }
+        if (dataCorrect) {
+            System.out.println("##################");
+            System.out.println("Check complete, all data exists and are correct");
+            System.out.println("##################");
         }
     }
 
