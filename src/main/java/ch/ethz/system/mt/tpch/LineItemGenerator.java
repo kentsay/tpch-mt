@@ -289,7 +289,6 @@ public class LineItemGenerator
 
             return new LineItem(orderIndex,
                     orderKey,
-                    partKey,
                     supplierKey,
                     lineNumber + 1,
                     quantity,

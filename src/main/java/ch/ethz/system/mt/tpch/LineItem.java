@@ -18,12 +18,12 @@ import static ch.ethz.system.mt.tpch.GenerateUtils.formatDate;
 import static ch.ethz.system.mt.tpch.GenerateUtils.formatMoney;
 import static java.util.Locale.ENGLISH;
 
+//modify from the original tpch: remove partKey because we are not using the part table
 public class LineItem
         implements TpchEntity
 {
     private final long rowNumber;
     private final long orderKey;
-    private final long partKey;
     private final long supplierKey;
     private final long lineNumber;
     private final long quantity;
@@ -41,7 +41,6 @@ public class LineItem
 
     public LineItem(long rowNumber,
             long orderKey,
-            long partKey,
             long supplierKey,
             long lineNumber,
             long quantity,
@@ -59,7 +58,6 @@ public class LineItem
     {
         this.rowNumber = rowNumber;
         this.orderKey = orderKey;
-        this.partKey = partKey;
         this.supplierKey = supplierKey;
         this.lineNumber = lineNumber;
         this.quantity = quantity;
@@ -85,11 +83,6 @@ public class LineItem
     public long getOrderKey()
     {
         return orderKey;
-    }
-
-    public long getPartKey()
-    {
-        return partKey;
     }
 
     public long getSupplierKey()
@@ -181,9 +174,8 @@ public class LineItem
     public String toLine()
     {
         return String.format(ENGLISH,
-                "%d|%d|%d|%d|%d|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|",
+                "%d|%d|%d|%d|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|",
                 orderKey,
-                partKey,
                 supplierKey,
                 lineNumber,
                 quantity,

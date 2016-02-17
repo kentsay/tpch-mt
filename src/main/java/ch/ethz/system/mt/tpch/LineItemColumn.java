@@ -27,14 +27,15 @@ public enum LineItemColumn
                 }
             },
 
-    @SuppressWarnings("SpellCheckingInspection")
-    PART_KEY("partkey", TpchColumnType.BIGINT)
-            {
-                public long getLong(LineItem lineItem)
-                {
-                    return lineItem.getPartKey();
-                }
-            },
+//    remove the partKey column in tpch-mt version
+//    @SuppressWarnings("SpellCheckingInspection")
+//    PART_KEY("partkey", TpchColumnType.BIGINT)
+//            {
+//                public long getLong(LineItem lineItem)
+//                {
+//                    return lineItem.getPartKey();
+//                }
+//            },
 
     @SuppressWarnings("SpellCheckingInspection")
     SUPPLIER_KEY("suppkey", TpchColumnType.BIGINT)
