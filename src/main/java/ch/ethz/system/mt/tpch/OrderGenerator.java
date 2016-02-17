@@ -121,6 +121,7 @@ public class OrderGenerator
 
             clerkRandom = new RandomBoundedInt(1171034773, 1, Math.max((int) (scaleFactor * CLERK_SCALE_BASE), CLERK_SCALE_BASE));
 
+            //change the maxCustomerKey by dividing with number of tenants to avoid data not found issue
             maxCustomerKey = (long) ((CustomerGenerator.SCALE_BASE * scaleFactor)/CustomerGenerator.tenantSize);
             customerKeyRandom = new RandomBoundedLong(851767375, scaleFactor >= 30000, 1, maxCustomerKey);
 
