@@ -72,7 +72,7 @@ public class dbgen {
         Writer writer;
         File file;
 
-        System.out.println("### DB Generate Start");
+        System.out.println("### DB Generate Start (mode: " + disMode + ")");
 
         CustomerGenerator customerGenerator = new CustomerGenerator(scaleFactor, part, numberOfParts, tenant);
         SupplierGenerator supplierGenerator = new SupplierGenerator(scaleFactor, part, numberOfParts, tenant);
@@ -109,6 +109,7 @@ public class dbgen {
 
                 rowCount = lineItemRowCount;
                 lineItemDataSize = DbGenUtil.zipfDataDist(tenant, rowCount);
+                lineItemGenerator = new LineItemGenerator(scaleFactor, part, numberOfParts, lineItemDataSize);
 
                 break;
         }
@@ -119,40 +120,46 @@ public class dbgen {
             FileUtil.checkParentDirector(file); //check and create output directory
             writer = new FileWriter(file);
 
-            System.out.println("Generating data for customers table");
+            System.out.print("Generating data for customers table");
             DbGenUtil.generator(customerGenerator, custDataSize, writer);
+            System.out.println("...done");
 
             /*** Supplier Table Generator ***/
             writer = new FileWriter(OUTPUT_DIRECTORY + "//supplier.tbl");
-            System.out.println("Generating data for supplier table");
+            System.out.print("Generating data for supplier table");
             DbGenUtil.generator(supplierGenerator, suppDataSize, writer);
+            System.out.println("...done");
 
             /*** Orders Table Generator ***/
             writer = new FileWriter(OUTPUT_DIRECTORY + "//orders.tbl");
-            System.out.println("Generating data for orders table");
+            System.out.print("Generating data for orders table");
             DbGenUtil.generator(orderGenerator, orderDataSize, writer);
+            System.out.println("...done");
 
             /*** Lineitem Table Generator ***/
             writer = new FileWriter(OUTPUT_DIRECTORY + "//lineitem.tbl");
-            System.out.println("Generating data for lineitem table");
+            System.out.print("Generating data for lineitem table");
             DbGenUtil.generator(lineItemGenerator, lineItemDataSize, writer);
+            System.out.println("...done");
 
             /*** Nation Table Generator ***/
             writer = new FileWriter(OUTPUT_DIRECTORY + "//nation.tbl");
-            System.out.println("Generating data for nation table");
+            System.out.print("Generating data for nation table");
             for (Nation entity : new NationGenerator()) {
                 writer.write(entity.toLine());
                 writer.write('\n');
             }
+            System.out.println("...done");
             writer.close();
 
             /*** Region Table Generator ***/
             writer = new FileWriter(OUTPUT_DIRECTORY + "//region.tbl");
-            System.out.println("Generating data for region table");
+            System.out.print("Generating data for region table");
             for (Region entity : new RegionGenerator()) {
                 writer.write(entity.toLine());
                 writer.write('\n');
             }
+            System.out.println("...done");
             writer.close();
 
         } catch (IOException e) {

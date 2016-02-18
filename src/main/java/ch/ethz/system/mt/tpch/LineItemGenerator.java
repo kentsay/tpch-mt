@@ -57,29 +57,28 @@ public class LineItemGenerator
     public int tenantSize = 0;
     public int dataPerTenant = 0;
     public int lastTenantData = 0;
+    public int[] distDataSize;
 
     public LineItemGenerator(double scaleFactor, int part, int partCount, int tenantSize)
     {
         this(scaleFactor, part, partCount, tenantSize, Distributions.getDefaultDistributions(), TextPool.getDefaultTestPool());
     }
 
-    public LineItemGenerator(double scaleFactor, int part, int partCount, int tenantSize, int rowCount) {
-        this(scaleFactor, part, partCount, tenantSize, rowCount, Distributions.getDefaultDistributions(), TextPool.getDefaultTestPool());
+    public LineItemGenerator(double scaleFactor, int part, int partCount, int[] distBlockSize)
+    {
+        this(scaleFactor, part, partCount, distBlockSize, Distributions.getDefaultDistributions(), TextPool.getDefaultTestPool());
     }
 
-    public LineItemGenerator(double scaleFactor, int part, int partCount, int tenantSize, int rowCount, Distributions distributions, TextPool textPool) {
+    public LineItemGenerator(double scaleFactor, int part, int partCount, int[] distBlockSize, Distributions distributions, TextPool textPool)
+    {
         checkArgument(scaleFactor > 0, "scaleFactor must be greater than 0");
         checkArgument(part >= 1, "part must be at least 1");
         checkArgument(part <= partCount, "part must be less than or equal to part count");
-        checkArgument(tenantSize > 0, "tenant number must be greater than 0");
 
         this.scaleFactor = scaleFactor;
         this.part = part;
         this.partCount = partCount;
-        this.tenantSize = tenantSize;
-        this.dataPerTenant = rowCount/tenantSize;
-        this.lastTenantData = this.dataPerTenant + (rowCount % tenantSize);
-
+        this.distDataSize = distBlockSize;
         this.distributions = checkNotNull(distributions, "distributions is null");
         this.textPool = checkNotNull(textPool, "textPool is null");
     }
@@ -105,13 +104,30 @@ public class LineItemGenerator
     @Override
     public Iterator<LineItem> iterator()
     {
-        return new LineItemGeneratorIterator(
-                distributions,
-                textPool,
-                scaleFactor,
-                new int[] {tenantSize, dataPerTenant, lastTenantData},
-                GenerateUtils.calculateStartIndex(OrderGenerator.SCALE_BASE, scaleFactor, part, partCount),
-                GenerateUtils.calculateRowCount(OrderGenerator.SCALE_BASE, scaleFactor, part, partCount));
+        //for zipf dist
+        if (distDataSize != null) {
+            return new LineItemGeneratorIterator(
+                    distributions,
+                    textPool,
+                    scaleFactor,
+                    distDataSize,
+                    GenerateUtils.calculateStartIndex(OrderGenerator.SCALE_BASE, scaleFactor, part, partCount),
+                    GenerateUtils.calculateRowCount(OrderGenerator.SCALE_BASE, scaleFactor, part, partCount));
+        } else {
+            //for uniform dist
+            int[] dataSize = new int[tenantSize];
+            for (int i=0; i<tenantSize; i++) {
+                dataSize[i] = dataPerTenant;
+            }
+            dataSize[tenantSize-1] = lastTenantData;
+            return new LineItemGeneratorIterator(
+                    distributions,
+                    textPool,
+                    scaleFactor,
+                    dataSize,
+                    GenerateUtils.calculateStartIndex(OrderGenerator.SCALE_BASE, scaleFactor, part, partCount),
+                    GenerateUtils.calculateRowCount(OrderGenerator.SCALE_BASE, scaleFactor, part, partCount));
+        }
     }
 
     private static class LineItemGeneratorIterator
@@ -150,6 +166,7 @@ public class LineItemGenerator
 
         private int[] dataBlock;
         private int counter = 0;
+        private int dataSizeIndex = 0;
 
         private LineItemGeneratorIterator(Distributions distributions, TextPool textPool, double scaleFactor, int[] dataBlock, long startIndex, long rowCount)
         {
@@ -157,7 +174,6 @@ public class LineItemGenerator
             this.startIndex = startIndex;
             this.rowCount = rowCount;
             this.dataBlock = dataBlock;
-            System.out.println(dataBlock[0] + " " + dataBlock[1] + " " + dataBlock[2]);
 
             returnedFlagRandom = new RandomString(717419739, distributions.getReturnFlags(), LINE_COUNT_MAX);
             shipInstructionsRandom = new RandomString(1371272478, distributions.getShipInstructions(), LINE_COUNT_MAX);
@@ -200,10 +216,10 @@ public class LineItemGenerator
                 return endOfData();
             }
 
-            if (index <= (dataBlock[0]-1)*dataBlock[1]) {
-                if ((startIndex + counter + 1) > dataBlock[1]) {
-                    counter = 0;
-                }
+            //if the counter reach the size of that tenant, move to the next index and get the size of that tenant
+            if ((startIndex + counter + 1) > dataBlock[dataSizeIndex]) {
+                dataSizeIndex++;
+                counter = 0;
             }
 
             LineItem lineitem = makeLineitem(startIndex + counter + 1);
