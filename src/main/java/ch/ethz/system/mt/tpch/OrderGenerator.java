@@ -17,9 +17,9 @@ import com.google.common.collect.AbstractIterator;
 
 import java.util.Iterator;
 
+import static ch.ethz.system.mt.tpch.PartGenerator.calculatePartPrice;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
-import static ch.ethz.system.mt.tpch.PartGenerator.calculatePartPrice;
 import static java.util.Locale.ENGLISH;
 
 public class OrderGenerator
@@ -52,10 +52,30 @@ public class OrderGenerator
     public int tenantSize = 0;
     public int dataPerTenant = 0;
     public int lastTenantData = 0;
+    public int[] distDataSize;
 
     public OrderGenerator(double scaleFactor, int part, int partCount, int tenantSize)
     {
         this(scaleFactor, part, partCount, tenantSize, Distributions.getDefaultDistributions(), TextPool.getDefaultTestPool());
+    }
+
+    public OrderGenerator(double scaleFactor, int part, int partCount, int[] distBlockSize)
+    {
+        this(scaleFactor, part, partCount, distBlockSize, Distributions.getDefaultDistributions(), TextPool.getDefaultTestPool());
+    }
+
+    public OrderGenerator(double scaleFactor, int part, int partCount, int[] distBlockSize, Distributions distributions, TextPool textPool)
+    {
+        checkArgument(scaleFactor > 0, "scaleFactor must be greater than 0");
+        checkArgument(part >= 1, "part must be at least 1");
+        checkArgument(part <= partCount, "part must be less than or equal to part count");
+
+        this.scaleFactor = scaleFactor;
+        this.part = part;
+        this.partCount = partCount;
+        this.distDataSize = distBlockSize;
+        this.distributions = checkNotNull(distributions, "distributions is null");
+        this.textPool = checkNotNull(textPool, "textPool is null");
     }
 
     public OrderGenerator(double scaleFactor, int part, int partCount, int tenantSize, Distributions distributions, TextPool textPool)
@@ -79,13 +99,30 @@ public class OrderGenerator
     @Override
     public Iterator<Order> iterator()
     {
-        return new OrderGeneratorIterator(
-                distributions,
-                textPool,
-                scaleFactor,
-                new int[] {tenantSize, dataPerTenant, lastTenantData},
-                GenerateUtils.calculateStartIndex(SCALE_BASE, scaleFactor, part, partCount),
-                GenerateUtils.calculateRowCount(SCALE_BASE, scaleFactor, part, partCount));
+        //for zipf dist
+        if (distDataSize != null) {
+            return new OrderGeneratorIterator(
+                    distributions,
+                    textPool,
+                    scaleFactor,
+                    distDataSize,
+                    GenerateUtils.calculateStartIndex(SCALE_BASE, scaleFactor, part, partCount),
+                    GenerateUtils.calculateRowCount(SCALE_BASE, scaleFactor, part, partCount));
+        } else {
+            //for uniform dist
+            int[] dataSize = new int[tenantSize];
+            for (int i=0; i<tenantSize; i++) {
+                dataSize[i] = dataPerTenant;
+            }
+            dataSize[tenantSize-1] = lastTenantData;
+            return new OrderGeneratorIterator(
+                    distributions,
+                    textPool,
+                    scaleFactor,
+                    dataSize,
+                    GenerateUtils.calculateStartIndex(SCALE_BASE, scaleFactor, part, partCount),
+                    GenerateUtils.calculateRowCount(SCALE_BASE, scaleFactor, part, partCount));
+        }
     }
 
     private static class OrderGeneratorIterator
@@ -93,7 +130,7 @@ public class OrderGenerator
     {
         private final RandomBoundedInt orderDateRandom = createOrderDateRandom();
         private final RandomBoundedInt lineCountRandom = createLineCountRandom();
-        private final RandomBoundedLong customerKeyRandom;
+        private RandomBoundedLong customerKeyRandom;
         private final RandomString orderPriorityRandom;
         private final RandomBoundedInt clerkRandom;
         private final RandomText commentRandom;
@@ -107,17 +144,20 @@ public class OrderGenerator
         private final long startIndex;
         private final long rowCount;
 
-        private final long maxCustomerKey;
+        private long maxCustomerKey;
 
         private long index;
         private long counter = 0;
         private int[] dataBlock;
+        private int dataSizeIndex = 0;
+        double scaleFactor;
 
         private OrderGeneratorIterator(Distributions distributions, TextPool textPool, double scaleFactor, int[] dataBlock, long startIndex, long rowCount)
         {
             this.startIndex = startIndex;
             this.rowCount = rowCount;
             this.dataBlock = dataBlock;
+            this.scaleFactor = scaleFactor;
 
             clerkRandom = new RandomBoundedInt(1171034773, 1, Math.max((int) (scaleFactor * CLERK_SCALE_BASE), CLERK_SCALE_BASE));
 
@@ -151,10 +191,10 @@ public class OrderGenerator
                 return endOfData();
             }
 
-            if (index <= (dataBlock[0]-1)*dataBlock[1]) {
-                if ((startIndex + counter + 1) > dataBlock[1]) {
-                    counter = 0;
-                }
+            //if the counter reach the size of that tenant, move to the next index and get the size of that tenant
+            if ((startIndex + counter + 1) > dataBlock[dataSizeIndex]) {
+                dataSizeIndex++;
+                counter = 0;
             }
 
             Order order = makeOrder(startIndex + counter + 1);

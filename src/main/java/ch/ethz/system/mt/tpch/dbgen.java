@@ -17,8 +17,7 @@ import java.io.Writer;
 /**
  * TODO List
  *  1. config file for table we want to generate
- *  2. fix foreign key issues
- *  3. change phone format - random choose format, and then generate data accordingly
+ *  2. change phone format - random choose format, and then generate data accordingly
  */
 public class dbgen {
 
@@ -77,11 +76,10 @@ public class dbgen {
 
         CustomerGenerator customerGenerator = new CustomerGenerator(scaleFactor, part, numberOfParts, tenant);
         SupplierGenerator supplierGenerator = new SupplierGenerator(scaleFactor, part, numberOfParts, tenant);
+        OrderGenerator orderGenerator = new OrderGenerator(scaleFactor, part, numberOfParts, tenant);
 
         LineItemGenerator lineItemGenerator = new LineItemGenerator(scaleFactor, part, numberOfParts, tenant);
         int lineItemRowCount = Iterators.size(lineItemGenerator.iterator()); //get the real size of lineItem from LineItemGenerator
-
-        OrderGenerator orderGenerator = new OrderGenerator(scaleFactor, part, numberOfParts, tenant);
 
         switch(disMode) {
             case "uniform":
@@ -91,17 +89,27 @@ public class dbgen {
                 orderDataSize    = DbGenUtil.uniformDataDist(tenant, orderGenerator.dataPerTenant, orderGenerator.lastTenantData);
                 break;
             case "zipf":
+                /**
+                 * need to generate the data twice:
+                 * 1. generate the data and captch the total number of records
+                 * 2. base on this total records, run a zipf distribution and get the data size array
+                 * 3. base on this data size array, generate again the db data so it won't go over the boundary
+                 */
                 int rowCount = Iterators.size(customerGenerator.iterator());
                 custDataSize = DbGenUtil.zipfDataDist(tenant, rowCount);
+                customerGenerator = new CustomerGenerator(scaleFactor, part, numberOfParts, custDataSize);
 
                 rowCount = Iterators.size(supplierGenerator.iterator());
                 suppDataSize = DbGenUtil.zipfDataDist(tenant, rowCount);
+                supplierGenerator = new SupplierGenerator(scaleFactor, part, numberOfParts, suppDataSize);
+
+                rowCount = Iterators.size(orderGenerator.iterator());
+                orderDataSize = DbGenUtil.zipfDataDist(tenant, rowCount);
+                orderGenerator = new OrderGenerator(scaleFactor, part, numberOfParts, orderDataSize);
 
                 rowCount = lineItemRowCount;
                 lineItemDataSize = DbGenUtil.zipfDataDist(tenant, rowCount);
 
-                rowCount = Iterators.size(orderGenerator.iterator());
-                orderDataSize = DbGenUtil.zipfDataDist(tenant, rowCount);
                 break;
         }
 

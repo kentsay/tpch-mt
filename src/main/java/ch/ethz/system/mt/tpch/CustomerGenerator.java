@@ -39,6 +39,7 @@ public class CustomerGenerator
     public static int tenantSize = 0;
     public int dataPerTenant = 0;
     public int lastTenantData = 0;
+    public int[] distDataSize;
 
     private final Distributions distributions;
     private final TextPool textPool;
@@ -46,6 +47,25 @@ public class CustomerGenerator
     public CustomerGenerator(double scaleFactor, int part, int partCount, int tenantSize)
     {
         this(scaleFactor, part, partCount, tenantSize, Distributions.getDefaultDistributions(), TextPool.getDefaultTestPool());
+    }
+
+    public CustomerGenerator(double scaleFactor, int part, int partCount, int[] distBlockSize)
+    {
+        this(scaleFactor, part, partCount, distBlockSize, Distributions.getDefaultDistributions(), TextPool.getDefaultTestPool());
+    }
+
+    public CustomerGenerator(double scaleFactor, int part, int partCount, int[] distBlockSize, Distributions distributions, TextPool textPool)
+    {
+        checkArgument(scaleFactor > 0, "scaleFactor must be greater than 0");
+        checkArgument(part >= 1, "part must be at least 1");
+        checkArgument(part <= partCount, "part must be less than or equal to part count");
+
+        this.scaleFactor = scaleFactor;
+        this.part = part;
+        this.partCount = partCount;
+        this.distDataSize = distBlockSize;
+        this.distributions = checkNotNull(distributions, "distributions is null");
+        this.textPool = checkNotNull(textPool, "textPool is null");
     }
 
     public CustomerGenerator(double scaleFactor, int part, int partCount, int tenantSize, Distributions distributions, TextPool textPool)
@@ -69,13 +89,28 @@ public class CustomerGenerator
     @Override
     public Iterator<Customer> iterator()
     {
-
-        return new CustomerGeneratorIterator(
-                distributions,
-                textPool,
-                new int[] {tenantSize, dataPerTenant, lastTenantData},
-                calculateStartIndex(SCALE_BASE, scaleFactor, part, partCount),
-                calculateRowCount(SCALE_BASE, scaleFactor, part, partCount));
+        //for zipf dist
+        if (distDataSize != null) {
+            return new CustomerGeneratorIterator(
+                    distributions,
+                    textPool,
+                    distDataSize,
+                    calculateStartIndex(SCALE_BASE, scaleFactor, part, partCount),
+                    calculateRowCount(SCALE_BASE, scaleFactor, part, partCount));
+        } else {
+            //for uniform dist
+            int[] dataSize = new int[tenantSize];
+            for (int i=0; i<tenantSize; i++) {
+                dataSize[i] = dataPerTenant;
+            }
+            dataSize[tenantSize-1] = lastTenantData;
+            return new CustomerGeneratorIterator(
+                    distributions,
+                    textPool,
+                    dataSize,
+                    calculateStartIndex(SCALE_BASE, scaleFactor, part, partCount),
+                    calculateRowCount(SCALE_BASE, scaleFactor, part, partCount));
+        }
     }
 
     private static class CustomerGeneratorIterator
@@ -94,6 +129,7 @@ public class CustomerGenerator
         private long index;
         private long counter = 0;
         private int[] dataBlock;
+        private int dataSizeIndex = 0;
 
         private CustomerGeneratorIterator(Distributions distributions, TextPool textPool, int[] dataBlock, long startIndex, long rowCount)
         {
@@ -120,10 +156,10 @@ public class CustomerGenerator
                 return endOfData();
             }
 
-            if (index <= (dataBlock[0]-1)*dataBlock[1]) {
-                if ((startIndex + counter + 1) > dataBlock[1]) {
-                    counter = 0;
-                }
+            //if the counter reach the size of that tenant, move to the next index and get the size of that tenant
+            if ((startIndex + counter + 1) > dataBlock[dataSizeIndex]) {
+                dataSizeIndex++;
+                counter = 0;
             }
 
             Customer customer = makeCustomer(startIndex + counter + 1);
