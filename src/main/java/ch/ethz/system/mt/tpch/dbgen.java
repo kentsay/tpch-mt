@@ -80,7 +80,6 @@ public class dbgen {
 
         LineItemGenerator lineItemGenerator = new LineItemGenerator(scaleFactor, part, numberOfParts, tenant);
         int lineItemRowCount = Iterators.size(lineItemGenerator.iterator()); //get the real size of lineItem from LineItemGenerator
-        lineItemGenerator = new LineItemGenerator(scaleFactor, part, numberOfParts, tenant, lineItemRowCount); //use the real row count to generate new data
 
         OrderGenerator orderGenerator = new OrderGenerator(scaleFactor, part, numberOfParts, tenant);
 
@@ -88,19 +87,16 @@ public class dbgen {
             case "uniform":
                 custDataSize     = DbGenUtil.uniformDataDist(tenant, customerGenerator.dataPerTenant, customerGenerator.lastTenantData);
                 suppDataSize     = DbGenUtil.uniformDataDist(tenant, supplierGenerator.dataPerTenant, supplierGenerator.lastTenantData);
-                lineItemDataSize = DbGenUtil.uniformDataDist(tenant, lineItemGenerator.dataPerTenant, lineItemGenerator.lastTenantData);
+                lineItemDataSize = DbGenUtil.uniformDataDist(tenant, lineItemRowCount/tenant, ((lineItemRowCount/tenant)+(lineItemRowCount%tenant)));
                 orderDataSize    = DbGenUtil.uniformDataDist(tenant, orderGenerator.dataPerTenant, orderGenerator.lastTenantData);
                 break;
             case "zipf":
-
                 int rowCount = Iterators.size(customerGenerator.iterator());
                 custDataSize = DbGenUtil.zipfDataDist(tenant, rowCount);
 
                 rowCount = Iterators.size(supplierGenerator.iterator());
                 suppDataSize = DbGenUtil.zipfDataDist(tenant, rowCount);
 
-                lineItemRowCount = Iterators.size(lineItemGenerator.iterator());
-                lineItemGenerator = new LineItemGenerator(scaleFactor, part, numberOfParts, tenant, lineItemRowCount); //use the real row count to generate new data
                 rowCount = lineItemRowCount;
                 lineItemDataSize = DbGenUtil.zipfDataDist(tenant, rowCount);
 
@@ -123,15 +119,15 @@ public class dbgen {
             System.out.println("Generating data for supplier table");
             DbGenUtil.generator(supplierGenerator, suppDataSize, writer);
 
-            /*** Lineitem Table Generator ***/
-            writer = new FileWriter(OUTPUT_DIRECTORY + "//lineitem.tbl");
-            System.out.println("Generating data for lineitem table");
-            DbGenUtil.generator(lineItemGenerator, lineItemDataSize, writer);
-
             /*** Orders Table Generator ***/
             writer = new FileWriter(OUTPUT_DIRECTORY + "//orders.tbl");
             System.out.println("Generating data for orders table");
             DbGenUtil.generator(orderGenerator, orderDataSize, writer);
+
+            /*** Lineitem Table Generator ***/
+            writer = new FileWriter(OUTPUT_DIRECTORY + "//lineitem.tbl");
+            System.out.println("Generating data for lineitem table");
+            DbGenUtil.generator(lineItemGenerator, lineItemDataSize, writer);
 
             /*** Nation Table Generator ***/
             writer = new FileWriter(OUTPUT_DIRECTORY + "//nation.tbl");

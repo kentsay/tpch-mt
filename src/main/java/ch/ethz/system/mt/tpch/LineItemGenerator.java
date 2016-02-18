@@ -58,7 +58,6 @@ public class LineItemGenerator
     public int dataPerTenant = 0;
     public int lastTenantData = 0;
 
-
     public LineItemGenerator(double scaleFactor, int part, int partCount, int tenantSize)
     {
         this(scaleFactor, part, partCount, tenantSize, Distributions.getDefaultDistributions(), TextPool.getDefaultTestPool());
@@ -158,6 +157,7 @@ public class LineItemGenerator
             this.startIndex = startIndex;
             this.rowCount = rowCount;
             this.dataBlock = dataBlock;
+            System.out.println(dataBlock[0] + " " + dataBlock[1] + " " + dataBlock[2]);
 
             returnedFlagRandom = new RandomString(717419739, distributions.getReturnFlags(), LINE_COUNT_MAX);
             shipInstructionsRandom = new RandomString(1371272478, distributions.getShipInstructions(), LINE_COUNT_MAX);
