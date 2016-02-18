@@ -134,7 +134,7 @@ public class PartSupplierGenerator
 
     static long selectPartSupplier(long partKey, long supplierNumber, double scaleFactor)
     {
-        long supplierCount = (long) (SupplierGenerator.SCALE_BASE * scaleFactor);
+        long supplierCount = (long) (SupplierGenerator.SCALE_BASE * scaleFactor) / CustomerGenerator.tenantSize;
         return ((partKey + (supplierNumber * ((supplierCount / SUPPLIERS_PER_PART) + ((partKey - 1) / supplierCount)))) % supplierCount) + 1;
     }
 }
