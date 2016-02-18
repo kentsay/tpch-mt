@@ -212,20 +212,27 @@ public class DataGenDataCheck {
     @Test(dependsOnMethods = {"testMapNotEmpty"})
     public void testOrderTableDataMatch() {
         boolean dataCorrect = true;
+        int errorCount = 0;
         for(String tid: orderMap.keySet()) {
             for(String orderKey: orderMap.get(tid).keySet()) {
                 String custKey = orderMap.get(tid).get(orderKey);
                 if (!customerIdExists(tid, custKey)) {
                     dataCorrect = false;
-                    System.out.println("Tenant id: " + tid + " with CustomerKey: " + custKey + " cannot be found");
+                    errorCount++;
+                    //System.out.println("Tenant id: " + tid + " with CustomerKey: " + custKey + " cannot be found");
                 }
             }
         }
         if (dataCorrect) {
             System.out.println("##################");
-            System.out.println("Check complete, all data on Order Table exists and are correct");
+            System.out.println("Check complete, all data in Order Table exists and are correct");
+            System.out.println("##################");
+        } else {
+            System.out.println("##################");
+            System.out.println(errorCount + " of data cannot match in Order Table");
             System.out.println("##################");
         }
+        Assert.assertTrue(dataCorrect);
     }
 
     public boolean customerIdExists(String tid, String id) {
@@ -237,24 +244,32 @@ public class DataGenDataCheck {
     @Test(dependsOnMethods = {"testMapNotEmpty"})
     public void testLineItemTableDataMatch() {
         boolean dataCorrect = true;
+        int errorCount = 0;
         for(String tid: lineItemMap.keySet()) {
             for(String orderKey: lineItemMap.get(tid).keySet()) {
                 if (!orderMap.get(tid).keySet().contains(orderKey)) {
                     dataCorrect = false;
-                    System.out.println("Tenant id: " + tid + " with OrderKey: " + orderKey + " cannot be found");
+                    errorCount++;
+                    //System.out.println("Tenant id: " + tid + " with OrderKey: " + orderKey + " cannot be found");
                 }
                 for(String supplierKey: lineItemMap.get(tid).get(orderKey)) {
                     if (!supplierMap.get(tid).contains(supplierKey)) {
                         dataCorrect = false;
-                        System.out.println("Tenant id: " + tid + " with OrderKey: " + orderKey + " with Supplier Key: " + supplierKey + " cannot be found");
+                        errorCount++;
+                        //System.out.println("Tenant id: " + tid + " with OrderKey: " + orderKey + " with Supplier Key: " + supplierKey + " cannot be found");
                     }
                 }
             }
         }
         if (dataCorrect) {
             System.out.println("##################");
-            System.out.println("Check complete, all data on LineItem Table exists and are correct");
+            System.out.println("Check complete, all data in LineItem Table exists and are correct");
+            System.out.println("##################");
+        } else {
+            System.out.println("##################");
+            System.out.println(errorCount + " of data cannot match in LineItem Table");
             System.out.println("##################");
         }
+        Assert.assertTrue(dataCorrect);
     }
 }
