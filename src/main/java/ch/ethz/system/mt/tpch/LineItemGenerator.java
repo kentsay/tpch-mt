@@ -54,12 +54,8 @@ public class LineItemGenerator
     private final Distributions distributions;
     private final TextPool textPool;
 
-    public int tenantSize = 0;
-    public int dataPerTenant = 0;
-    public int lastTenantData = 0;
     public int[] distDataSize;
     public int[] suppDataSize;
-
 
     public LineItemGenerator(double scaleFactor, int part, int partCount, int[] distBlockSize)
     {
@@ -84,7 +80,6 @@ public class LineItemGenerator
         this.distributions = checkNotNull(distributions, "distributions is null");
         this.textPool = checkNotNull(textPool, "textPool is null");
     }
-
 
     public LineItemGenerator(double scaleFactor, int part, int partCount, int[] distBlockSize, int[] suppSize, Distributions distributions, TextPool textPool)
     {

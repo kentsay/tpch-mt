@@ -73,26 +73,22 @@ public class dbgen {
 
         System.out.println("### DB Generate Start (mode: " + disMode + ")");
 
-        //calculate actually row count
+        //Calculate actually row count
         customerRowCount     = (int) GenerateUtils.calculateRowCount(CustomerGenerator.SCALE_BASE, scaleFactor, part, numberOfParts);
         supplierRowCount     = (int) GenerateUtils.calculateRowCount(SupplierGenerator.SCALE_BASE, scaleFactor, part, numberOfParts);
         orderRowCount    = (int) GenerateUtils.calculateRowCount(OrderGenerator.SCALE_BASE, scaleFactor, part, numberOfParts);
-
-        //LineItemGenerator lineItemGenerator = new LineItemGenerator(scaleFactor, part, numberOfParts, tenant);
-        //lineItemRowCount = Iterators.size(lineItemGenerator.iterator());
+        //The row count of lineitem depends on order row count and cannot be pre-calculate
 
         switch(disMode) {
             case "uniform":
                 custDataSize     = DbGenUtil.uniformDataDist(tenant, customerRowCount);
                 suppDataSize     = DbGenUtil.uniformDataDist(tenant, supplierRowCount);
                 orderDataSize    = DbGenUtil.uniformDataDist(tenant, orderRowCount);
-                //lineItemDataSize = DbGenUtil.uniformDataDist(tenant, orderRowCount);
                 break;
             case "zipf":
                 custDataSize = DbGenUtil.zipfDataDist(tenant, customerRowCount);
                 suppDataSize = DbGenUtil.zipfDataDist(tenant, supplierRowCount);
                 orderDataSize = DbGenUtil.zipfDataDist(tenant, orderRowCount);
-                //lineItemDataSize = DbGenUtil.zipfDataDist(tenant, orderRowCount);
                 break;
         }
 
@@ -103,34 +99,29 @@ public class dbgen {
         LineItemGenerator lineItemGenerator = new LineItemGenerator(scaleFactor, part, numberOfParts, orderDataSize, suppDataSize);
 
         try {
-            /*** Customer Table Generator ***/
             file = new File(OUTPUT_DIRECTORY + "//customer.tbl");
             FileUtil.checkParentDirector(file); //check and create output directory
             writer = new FileWriter(file);
 
             System.out.print("Generating data for customers table");
-            DbGenUtil.tenantGenerator(customerGenerator, custDataSize, writer);
+            DbGenUtil.tenantGenerator(customerGenerator, writer);
             System.out.println("...done");
 
-            /*** Supplier Table Generator ***/
             writer = new FileWriter(OUTPUT_DIRECTORY + "//supplier.tbl");
             System.out.print("Generating data for supplier table");
-            DbGenUtil.tenantGenerator(supplierGenerator, suppDataSize, writer);
+            DbGenUtil.tenantGenerator(supplierGenerator, writer);
             System.out.println("...done");
 
-            /*** Orders Table Generator ***/
             writer = new FileWriter(OUTPUT_DIRECTORY + "//orders.tbl");
             System.out.print("Generating data for orders table");
-            DbGenUtil.tenantGenerator(orderGenerator, orderDataSize, writer);
+            DbGenUtil.tenantGenerator(orderGenerator, writer);
             System.out.println("...done");
 
-            /*** Lineitem Table Generator ***/
             writer = new FileWriter(OUTPUT_DIRECTORY + "//lineitem.tbl");
             System.out.print("Generating data for lineitem table");
-            DbGenUtil.tenantGenerator(lineItemGenerator, orderDataSize, writer);
+            DbGenUtil.tenantGenerator(lineItemGenerator, writer);
             System.out.println("...done");
 
-            /*** Nation Table Generator ***/
             writer = new FileWriter(OUTPUT_DIRECTORY + "//nation.tbl");
             System.out.print("Generating data for nation table");
             for (Nation entity : new NationGenerator()) {
@@ -140,7 +131,6 @@ public class dbgen {
             System.out.println("...done");
             writer.close();
 
-            /*** Region Table Generator ***/
             writer = new FileWriter(OUTPUT_DIRECTORY + "//region.tbl");
             System.out.print("Generating data for region table");
             for (Region entity : new RegionGenerator()) {

@@ -1,9 +1,7 @@
 package util;
 
-import ch.ethz.system.mt.tpch.LineItem;
-import ch.ethz.system.mt.tpch.TpchSchemaInterface;
 import ch.ethz.system.mt.tpch.TpchEntity;
-import com.google.common.collect.Iterators;
+import ch.ethz.system.mt.tpch.TpchSchemaInterface;
 import org.apache.commons.math3.distribution.ZipfDistribution;
 
 import java.io.IOException;
@@ -11,12 +9,18 @@ import java.io.Writer;
 
 
 public class DbGenUtil {
-    public static <T extends TpchEntity> void tenantGenerator(TpchSchemaInterface<T> schemaGenerator, int[] dataSize, Writer writer) {
-        int counter = 0;
-        int current_key = 1, previous_key = 1;
+    public static <T extends TpchEntity> void tenantGenerator(TpchSchemaInterface<T> schemaGenerator, Writer writer) {
+        int current_key = 1, previous_key;
         int tenant_index = 1;
-        int index = 0;
         try {
+            /**
+             * The partition is done by checking the key value
+             * Example:
+             * case 1: 1,2,3,1,2,3
+             * case 2: 1,1,1,2,3,1
+             *
+             * when the key repeat to 1, move on to the next tenant id
+             */
             for (T entity: schemaGenerator) {
                 previous_key = current_key;
                 current_key = (int) entity.getRowNumber();
@@ -26,20 +30,6 @@ public class DbGenUtil {
                 } else {
                     writer.write(tenant_index + "|" + entity.toLine() + "\n");
                 }
-                /**
-                 * case 1: 1,2,3,1,2,3
-                 * case 2: 1,1,1,2,3,1
-                 *
-                 */
-//                if (index < dataSize.length && counter < dataSize[index]) {
-//                    writer.write(tenant_index + "|" + entity.toLine() + "\n");
-//                } else {
-//                    tenant_index++;
-//                    writer.write(tenant_index + "|" + entity.toLine() + "\n");
-//                    counter = 0;
-//                    index++;
-//                }
-//                counter++;
             }
             writer.close();
         } catch (IOException e) {
@@ -63,7 +53,7 @@ public class DbGenUtil {
         int[] dataDist = new int[numOfTenant];
         ZipfDistribution distribution = new ZipfDistribution(numOfTenant,1);
         int sum = 0;
-        int probability = 0;
+        int probability;
         for (int i = 1; i <= numOfTenant; i++) {
             probability = (int) Math.floor(distribution.probability(i)*rowCount);
             dataDist[i-1] = probability;
