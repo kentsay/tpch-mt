@@ -58,15 +58,17 @@ public class LineItemGenerator
     public int dataPerTenant = 0;
     public int lastTenantData = 0;
     public int[] distDataSize;
+    public int[] suppDataSize;
 
-    public LineItemGenerator(double scaleFactor, int part, int partCount, int tenantSize)
-    {
-        this(scaleFactor, part, partCount, tenantSize, Distributions.getDefaultDistributions(), TextPool.getDefaultTestPool());
-    }
 
     public LineItemGenerator(double scaleFactor, int part, int partCount, int[] distBlockSize)
     {
         this(scaleFactor, part, partCount, distBlockSize, Distributions.getDefaultDistributions(), TextPool.getDefaultTestPool());
+    }
+
+    public LineItemGenerator(double scaleFactor, int part, int partCount, int[] distBlockSize, int[] suppSize)
+    {
+        this(scaleFactor, part, partCount, distBlockSize, suppSize, Distributions.getDefaultDistributions(), TextPool.getDefaultTestPool());
     }
 
     public LineItemGenerator(double scaleFactor, int part, int partCount, int[] distBlockSize, Distributions distributions, TextPool textPool)
@@ -83,20 +85,18 @@ public class LineItemGenerator
         this.textPool = checkNotNull(textPool, "textPool is null");
     }
 
-    public LineItemGenerator(double scaleFactor, int part, int partCount, int tenantSize, Distributions distributions, TextPool textPool)
+
+    public LineItemGenerator(double scaleFactor, int part, int partCount, int[] distBlockSize, int[] suppSize, Distributions distributions, TextPool textPool)
     {
         checkArgument(scaleFactor > 0, "scaleFactor must be greater than 0");
         checkArgument(part >= 1, "part must be at least 1");
         checkArgument(part <= partCount, "part must be less than or equal to part count");
-        checkArgument(tenantSize > 0, "tenant number must be greater than 0");
 
         this.scaleFactor = scaleFactor;
         this.part = part;
         this.partCount = partCount;
-        this.tenantSize = tenantSize;
-        this.dataPerTenant = (int) GenerateUtils.calculateRowCount(OrderGenerator.SCALE_BASE, scaleFactor, part, partCount)/tenantSize;
-        this.lastTenantData = this.dataPerTenant + (int) GenerateUtils.calculateRowCount(OrderGenerator.SCALE_BASE, scaleFactor, part, partCount) % tenantSize;
-
+        this.distDataSize = distBlockSize;
+        this.suppDataSize = suppSize;
         this.distributions = checkNotNull(distributions, "distributions is null");
         this.textPool = checkNotNull(textPool, "textPool is null");
     }
@@ -104,30 +104,14 @@ public class LineItemGenerator
     @Override
     public Iterator<LineItem> iterator()
     {
-        //for zipf dist
-        if (distDataSize != null) {
-            return new LineItemGeneratorIterator(
-                    distributions,
-                    textPool,
-                    scaleFactor,
-                    distDataSize,
-                    GenerateUtils.calculateStartIndex(OrderGenerator.SCALE_BASE, scaleFactor, part, partCount),
-                    GenerateUtils.calculateRowCount(OrderGenerator.SCALE_BASE, scaleFactor, part, partCount));
-        } else {
-            //for uniform dist
-            int[] dataSize = new int[tenantSize];
-            for (int i=0; i<tenantSize; i++) {
-                dataSize[i] = dataPerTenant;
-            }
-            dataSize[tenantSize-1] = lastTenantData;
-            return new LineItemGeneratorIterator(
-                    distributions,
-                    textPool,
-                    scaleFactor,
-                    dataSize,
-                    GenerateUtils.calculateStartIndex(OrderGenerator.SCALE_BASE, scaleFactor, part, partCount),
-                    GenerateUtils.calculateRowCount(OrderGenerator.SCALE_BASE, scaleFactor, part, partCount));
-        }
+        return new LineItemGeneratorIterator(
+                distributions,
+                textPool,
+                scaleFactor,
+                distDataSize,
+                suppDataSize,
+                GenerateUtils.calculateStartIndex(OrderGenerator.SCALE_BASE, scaleFactor, part, partCount),
+                GenerateUtils.calculateRowCount(OrderGenerator.SCALE_BASE, scaleFactor, part, partCount));
     }
 
     private static class LineItemGeneratorIterator
@@ -165,15 +149,17 @@ public class LineItemGenerator
         private int lineNumber;
 
         private int[] dataBlock;
+        private int[] suppBlock;
         private int counter = 0;
         private int dataSizeIndex = 0;
 
-        private LineItemGeneratorIterator(Distributions distributions, TextPool textPool, double scaleFactor, int[] dataBlock, long startIndex, long rowCount)
+        private LineItemGeneratorIterator(Distributions distributions, TextPool textPool, double scaleFactor, int[] dataBlock, int[] suppBlock, long startIndex, long rowCount)
         {
             this.scaleFactor = scaleFactor;
             this.startIndex = startIndex;
             this.rowCount = rowCount;
             this.dataBlock = dataBlock;
+            this.suppBlock = suppBlock;
 
             returnedFlagRandom = new RandomString(717419739, distributions.getReturnFlags(), LINE_COUNT_MAX);
             shipInstructionsRandom = new RandomString(1371272478, distributions.getShipInstructions(), LINE_COUNT_MAX);
@@ -222,7 +208,7 @@ public class LineItemGenerator
                 counter = 0;
             }
 
-            LineItem lineitem = makeLineitem(startIndex + counter + 1);
+            LineItem lineitem = makeLineitem(startIndex + counter + 1, suppBlock[dataSizeIndex]);
             lineNumber++;
 
             // advance next row only when all lines for the order have been produced
@@ -260,7 +246,7 @@ public class LineItemGenerator
             return lineitem;
         }
 
-        private LineItem makeLineitem(long orderIndex)
+        private LineItem makeLineitem(long orderIndex, int suppMaxKey)
         {
             long orderKey = makeOrderKey(orderIndex);
 
@@ -270,8 +256,10 @@ public class LineItemGenerator
 
             long partKey = linePartKeyRandom.nextValue();
 
-            int supplierNumber = supplierNumberRandom.nextValue();
-            long supplierKey = PartSupplierGenerator.selectPartSupplier(partKey, supplierNumber, scaleFactor);
+            //int supplierNumber = supplierNumberRandom.nextValue();
+            long supplierKey = suppMaxKey;
+
+            //long supplierKey = PartSupplierGenerator.selectPartSupplier(partKey, supplierNumber, scaleFactor);
 
             long partPrice = PartGenerator.calculatePartPrice(partKey);
             long extendedPrice = partPrice * quantity;
@@ -303,7 +291,7 @@ public class LineItemGenerator
             String shipMode = shipModeRandom.nextValue();
             String comment = commentRandom.nextValue();
 
-            return new LineItem(orderIndex,
+            return new LineItem(orderKey,
                     orderKey,
                     supplierKey,
                     lineNumber + 1,

@@ -250,7 +250,7 @@ public class DataGenDataCheck {
                 if (!orderMap.get(tid).keySet().contains(orderKey)) {
                     dataCorrect = false;
                     errorCount++;
-                    //System.out.println("Tenant id: " + tid + " with OrderKey: " + orderKey + " cannot be found");
+                    System.out.println("Tenant id: " + tid + " with OrderKey: " + orderKey + " cannot be found");
                 }
                 for(String supplierKey: lineItemMap.get(tid).get(orderKey)) {
                     if (!supplierMap.get(tid).contains(supplierKey)) {

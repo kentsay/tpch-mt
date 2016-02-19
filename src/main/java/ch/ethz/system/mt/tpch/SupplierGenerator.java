@@ -46,15 +46,8 @@ public class SupplierGenerator
 
     private final Distributions distributions;
     private final TextPool textPool;
-    public int tenantSize = 0;
-    public int dataPerTenant = 0;
-    public int lastTenantData = 0;
     public int[] distDataSize;
 
-    public SupplierGenerator(double scaleFactor, int part, int partCount, int tenantSize)
-    {
-        this(scaleFactor, part, partCount, tenantSize, Distributions.getDefaultDistributions(), TextPool.getDefaultTestPool());
-    }
 
     public SupplierGenerator(double scaleFactor, int part, int partCount, int[] distBlockSize)
     {
@@ -75,49 +68,15 @@ public class SupplierGenerator
         this.textPool = checkNotNull(textPool, "textPool is null");
     }
 
-    public SupplierGenerator(double scaleFactor, int part, int partCount, int tenantSize, Distributions distributions, TextPool textPool)
-    {
-        checkArgument(scaleFactor > 0, "scaleFactor must be greater than 0");
-        checkArgument(part >= 1, "part must be at least 1");
-        checkArgument(part <= partCount, "part must be less than or equal to part count");
-        checkArgument(tenantSize > 0, "tenant number must be greater than 0");
-
-        this.scaleFactor = scaleFactor;
-        this.part = part;
-        this.partCount = partCount;
-        this.tenantSize = tenantSize;
-        this.dataPerTenant  = (int) calculateRowCount(SCALE_BASE, scaleFactor, part, partCount)/tenantSize;
-        this.lastTenantData = this.dataPerTenant + (int) calculateRowCount(SCALE_BASE, scaleFactor, part, partCount) % tenantSize;
-
-        this.distributions = checkNotNull(distributions, "distributions is null");
-        this.textPool = checkNotNull(textPool, "textPool is null");
-    }
-
     @Override
     public Iterator<Supplier> iterator()
     {
-        //for zipf dist
-        if (distDataSize != null) {
-            return new SupplierGeneratorIterator(
-                    distributions,
-                    textPool,
-                    distDataSize,
-                    calculateStartIndex(SCALE_BASE, scaleFactor, part, partCount),
-                    calculateRowCount(SCALE_BASE, scaleFactor, part, partCount));
-        } else {
-            //for uniform dist
-            int[] dataSize = new int[tenantSize];
-            for (int i=0; i<tenantSize; i++) {
-                dataSize[i] = dataPerTenant;
-            }
-            dataSize[tenantSize-1] = lastTenantData;
-            return new SupplierGeneratorIterator(
-                    distributions,
-                    textPool,
-                    dataSize,
-                    calculateStartIndex(SCALE_BASE, scaleFactor, part, partCount),
-                    calculateRowCount(SCALE_BASE, scaleFactor, part, partCount));
-        }
+        return new SupplierGeneratorIterator(
+                distributions,
+                textPool,
+                distDataSize,
+                calculateStartIndex(SCALE_BASE, scaleFactor, part, partCount),
+                calculateRowCount(SCALE_BASE, scaleFactor, part, partCount));
     }
 
     private static class SupplierGeneratorIterator

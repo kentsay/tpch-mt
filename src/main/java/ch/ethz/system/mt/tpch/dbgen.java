@@ -1,6 +1,5 @@
 package ch.ethz.system.mt.tpch;
 
-import com.google.common.collect.Iterators;
 import org.apache.commons.cli.*;
 import util.DbGenUtil;
 import util.FileUtil;
@@ -30,9 +29,9 @@ public class dbgen {
         int numberOfParts = 1; //adjust this value for different parts of data
         int tenant = 1; //set default value for tenant number
         int[] custDataSize     = new int[tenant];
-        int[] lineItemDataSize = new int[tenant];
         int[] orderDataSize    = new int[tenant];
         int[] suppDataSize     = new int[tenant];
+        int customerRowCount, supplierRowCount, orderRowCount;
         String disMode = "uniform"; //set default value for distribution mode
 
         Options options = new Options();
@@ -74,45 +73,34 @@ public class dbgen {
 
         System.out.println("### DB Generate Start (mode: " + disMode + ")");
 
-        CustomerGenerator customerGenerator = new CustomerGenerator(scaleFactor, part, numberOfParts, tenant);
-        SupplierGenerator supplierGenerator = new SupplierGenerator(scaleFactor, part, numberOfParts, tenant);
-        OrderGenerator orderGenerator = new OrderGenerator(scaleFactor, part, numberOfParts, tenant);
+        //calculate actually row count
+        customerRowCount     = (int) GenerateUtils.calculateRowCount(CustomerGenerator.SCALE_BASE, scaleFactor, part, numberOfParts);
+        supplierRowCount     = (int) GenerateUtils.calculateRowCount(SupplierGenerator.SCALE_BASE, scaleFactor, part, numberOfParts);
+        orderRowCount    = (int) GenerateUtils.calculateRowCount(OrderGenerator.SCALE_BASE, scaleFactor, part, numberOfParts);
 
-        LineItemGenerator lineItemGenerator = new LineItemGenerator(scaleFactor, part, numberOfParts, tenant);
-        int lineItemRowCount = Iterators.size(lineItemGenerator.iterator()); //get the real size of lineItem from LineItemGenerator
+        //LineItemGenerator lineItemGenerator = new LineItemGenerator(scaleFactor, part, numberOfParts, tenant);
+        //lineItemRowCount = Iterators.size(lineItemGenerator.iterator());
 
         switch(disMode) {
             case "uniform":
-                custDataSize     = DbGenUtil.uniformDataDist(tenant, customerGenerator.dataPerTenant, customerGenerator.lastTenantData);
-                suppDataSize     = DbGenUtil.uniformDataDist(tenant, supplierGenerator.dataPerTenant, supplierGenerator.lastTenantData);
-                lineItemDataSize = DbGenUtil.uniformDataDist(tenant, lineItemRowCount/tenant, ((lineItemRowCount/tenant)+(lineItemRowCount%tenant)));
-                orderDataSize    = DbGenUtil.uniformDataDist(tenant, orderGenerator.dataPerTenant, orderGenerator.lastTenantData);
+                custDataSize     = DbGenUtil.uniformDataDist(tenant, customerRowCount);
+                suppDataSize     = DbGenUtil.uniformDataDist(tenant, supplierRowCount);
+                orderDataSize    = DbGenUtil.uniformDataDist(tenant, orderRowCount);
+                //lineItemDataSize = DbGenUtil.uniformDataDist(tenant, orderRowCount);
                 break;
             case "zipf":
-                /**
-                 * need to generate the data twice:
-                 * 1. generate the data and captch the total number of records
-                 * 2. base on this total records, run a zipf distribution and get the data size array
-                 * 3. base on this data size array, generate again the db data so it won't go over the boundary
-                 */
-                int rowCount = Iterators.size(customerGenerator.iterator());
-                custDataSize = DbGenUtil.zipfDataDist(tenant, rowCount);
-                customerGenerator = new CustomerGenerator(scaleFactor, part, numberOfParts, custDataSize);
-
-                rowCount = Iterators.size(supplierGenerator.iterator());
-                suppDataSize = DbGenUtil.zipfDataDist(tenant, rowCount);
-                supplierGenerator = new SupplierGenerator(scaleFactor, part, numberOfParts, suppDataSize);
-
-                rowCount = Iterators.size(orderGenerator.iterator());
-                orderDataSize = DbGenUtil.zipfDataDist(tenant, rowCount);
-                orderGenerator = new OrderGenerator(scaleFactor, part, numberOfParts, orderDataSize);
-
-                rowCount = lineItemRowCount;
-                lineItemDataSize = DbGenUtil.zipfDataDist(tenant, rowCount);
-                lineItemGenerator = new LineItemGenerator(scaleFactor, part, numberOfParts, lineItemDataSize);
-
+                custDataSize = DbGenUtil.zipfDataDist(tenant, customerRowCount);
+                suppDataSize = DbGenUtil.zipfDataDist(tenant, supplierRowCount);
+                orderDataSize = DbGenUtil.zipfDataDist(tenant, orderRowCount);
+                //lineItemDataSize = DbGenUtil.zipfDataDist(tenant, orderRowCount);
                 break;
         }
+
+        //Generate the data
+        CustomerGenerator customerGenerator = new CustomerGenerator(scaleFactor, part, numberOfParts, custDataSize);
+        SupplierGenerator supplierGenerator = new SupplierGenerator(scaleFactor, part, numberOfParts, suppDataSize);
+        OrderGenerator orderGenerator       = new OrderGenerator(scaleFactor, part, numberOfParts, orderDataSize, custDataSize);
+        LineItemGenerator lineItemGenerator = new LineItemGenerator(scaleFactor, part, numberOfParts, orderDataSize, suppDataSize);
 
         try {
             /*** Customer Table Generator ***/
@@ -121,25 +109,25 @@ public class dbgen {
             writer = new FileWriter(file);
 
             System.out.print("Generating data for customers table");
-            DbGenUtil.generator(customerGenerator, custDataSize, writer);
+            DbGenUtil.tenantGenerator(customerGenerator, custDataSize, writer);
             System.out.println("...done");
 
             /*** Supplier Table Generator ***/
             writer = new FileWriter(OUTPUT_DIRECTORY + "//supplier.tbl");
             System.out.print("Generating data for supplier table");
-            DbGenUtil.generator(supplierGenerator, suppDataSize, writer);
+            DbGenUtil.tenantGenerator(supplierGenerator, suppDataSize, writer);
             System.out.println("...done");
 
             /*** Orders Table Generator ***/
             writer = new FileWriter(OUTPUT_DIRECTORY + "//orders.tbl");
             System.out.print("Generating data for orders table");
-            DbGenUtil.generator(orderGenerator, orderDataSize, writer);
+            DbGenUtil.tenantGenerator(orderGenerator, orderDataSize, writer);
             System.out.println("...done");
 
             /*** Lineitem Table Generator ***/
             writer = new FileWriter(OUTPUT_DIRECTORY + "//lineitem.tbl");
             System.out.print("Generating data for lineitem table");
-            DbGenUtil.generator(lineItemGenerator, lineItemDataSize, writer);
+            DbGenUtil.tenantGenerator(lineItemGenerator, orderDataSize, writer);
             System.out.println("...done");
 
             /*** Nation Table Generator ***/

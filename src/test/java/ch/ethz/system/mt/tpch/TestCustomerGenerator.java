@@ -109,6 +109,6 @@ public class TestCustomerGenerator
 
     public static void assertPartialMD5(int scaleFactor, int step, int children, String expectedMD5)
     {
-        assertEntityLinesMD5(new CustomerGenerator(scaleFactor, step, children, 1), expectedMD5);
+        assertEntityLinesMD5(new CustomerGenerator(scaleFactor, step, children, new int[] {1}), expectedMD5);
     }
 }

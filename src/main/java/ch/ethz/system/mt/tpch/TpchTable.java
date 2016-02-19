@@ -25,7 +25,7 @@ public abstract class TpchTable<E extends TpchEntity>
 {
     public static final TpchTable<Customer> CUSTOMER = new TpchTable<Customer>("customer", CustomerColumn.values())
     {
-        public Iterable<Customer> createGenerator(double scaleFactor, int part, int partCount, int tenantSize)
+        public Iterable<Customer> createGenerator(double scaleFactor, int part, int partCount, int[] tenantSize)
         {
             return new CustomerGenerator(scaleFactor, part, partCount, tenantSize);
         }
@@ -33,7 +33,7 @@ public abstract class TpchTable<E extends TpchEntity>
 
     public static final TpchTable<Order> ORDERS = new TpchTable<Order>("orders", OrderColumn.values())
     {
-        public Iterable<Order> createGenerator(double scaleFactor, int part, int partCount, int tenantSize)
+        public Iterable<Order> createGenerator(double scaleFactor, int part, int partCount, int[] tenantSize)
         {
             return new OrderGenerator(scaleFactor, part, partCount, tenantSize);
         }
@@ -42,7 +42,7 @@ public abstract class TpchTable<E extends TpchEntity>
     @SuppressWarnings("SpellCheckingInspection")
     public static final TpchTable<LineItem> LINE_ITEM = new TpchTable<LineItem>("lineitem", LineItemColumn.values())
     {
-        public Iterable<LineItem> createGenerator(double scaleFactor, int part, int partCount, int tenantSize)
+        public Iterable<LineItem> createGenerator(double scaleFactor, int part, int partCount, int[] tenantSize)
         {
             return new LineItemGenerator(scaleFactor, part, partCount, tenantSize);
         }
@@ -50,7 +50,7 @@ public abstract class TpchTable<E extends TpchEntity>
 
     public static final TpchTable<Part> PART = new TpchTable<Part>("part", PartColumn.values())
     {
-        public Iterable<Part> createGenerator(double scaleFactor, int part, int partCount, int tenantSize)
+        public Iterable<Part> createGenerator(double scaleFactor, int part, int partCount, int[] tenantSize)
         {
             return new PartGenerator(scaleFactor, part, partCount);
         }
@@ -59,7 +59,7 @@ public abstract class TpchTable<E extends TpchEntity>
     @SuppressWarnings("SpellCheckingInspection")
     public static final TpchTable<PartSupplier> PART_SUPPLIER = new TpchTable<PartSupplier>("partsupp", PartSupplierColumn.values())
     {
-        public Iterable<PartSupplier> createGenerator(double scaleFactor, int part, int partCount, int tenantSize)
+        public Iterable<PartSupplier> createGenerator(double scaleFactor, int part, int partCount, int[] tenantSize)
         {
             return new PartSupplierGenerator(scaleFactor, part, partCount);
         }
@@ -67,7 +67,7 @@ public abstract class TpchTable<E extends TpchEntity>
 
     public static final TpchTable<Supplier> SUPPLIER = new TpchTable<Supplier>("supplier", SupplierColumn.values())
     {
-        public Iterable<Supplier> createGenerator(double scaleFactor, int part, int partCount, int tenantSize)
+        public Iterable<Supplier> createGenerator(double scaleFactor, int part, int partCount, int[] tenantSize)
         {
             return new SupplierGenerator(scaleFactor, part, partCount, tenantSize);
         }
@@ -75,7 +75,7 @@ public abstract class TpchTable<E extends TpchEntity>
 
     public static final TpchTable<Nation> NATION = new TpchTable<Nation>("nation", NationColumn.values())
     {
-        public Iterable<Nation> createGenerator(double scaleFactor, int part, int partCount, int tenantSize)
+        public Iterable<Nation> createGenerator(double scaleFactor, int part, int partCount, int[] tenantSize)
         {
             if (part != 1) {
                 return ImmutableList.of();
@@ -86,7 +86,7 @@ public abstract class TpchTable<E extends TpchEntity>
 
     public static final TpchTable<Region> REGION = new TpchTable<Region>("region", RegionColumn.values())
     {
-        public Iterable<Region> createGenerator(double scaleFactor, int part, int partCount, int tenantSize)
+        public Iterable<Region> createGenerator(double scaleFactor, int part, int partCount, int[] tenantSize)
         {
             if (part != 1) {
                 return ImmutableList.of();
@@ -143,7 +143,7 @@ public abstract class TpchTable<E extends TpchEntity>
         return column;
     }
 
-    public abstract Iterable<E> createGenerator(double scaleFactor, int part, int partCount, int tenantSize);
+    public abstract Iterable<E> createGenerator(double scaleFactor, int part, int partCount, int[] tenantSize);
 
     public static Function<TpchTable<?>, String> tableNameGetter()
     {
