@@ -13,6 +13,8 @@
  */
 package ch.ethz.system.mt.tpch;
 
+import java.util.Random;
+
 import static java.util.Locale.ENGLISH;
 
 public class RandomPhoneNumber
@@ -33,7 +35,7 @@ public class RandomPhoneNumber
 
     public String nextValue(long nationKey)
     {
-        int format = (int) nationKey % 3;
+        int format = new Random().nextInt(10) % 3;
         String number = new String("");
         switch (format) {
             case 0:
