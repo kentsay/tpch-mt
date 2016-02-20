@@ -12,12 +12,6 @@ import java.io.Writer;
 /**
  * Entry point to generation database data for Multi-tenant version TPC-H benchmark
  */
-
-/**
- * TODO List
- *  1. config file for table we want to generate
- *  2. change phone format - random choose format, and then generate data accordingly
- */
 public class dbgen {
 
     public static final String OUTPUT_DIRECTORY = "output";
@@ -36,10 +30,9 @@ public class dbgen {
 
         Options options = new Options();
         options.addOption("h", false, "-- display this message");
-        options.addOption("s", true,  "-- set Scale Factor (SF) to <n> (default: 1)");
-        options.addOption("t", true,  "-- set Number of Tenants to <n> (default: 1)");
-        options.addOption("m", true,  "-- set distribution mode to <mode> (default: uniform, others: zipf");
-        options.addOption("T", true,  "-- generate tables");
+        options.addOption("s", true,  "-- set scale factor (SF) (default: 1)");
+        options.addOption("t", true,  "-- set number of tenants (default: 1)");
+        options.addOption("m", true,  "-- set distribution mode (uniform, zipf");
 
         CommandLineParser parser = new DefaultParser();
         try {

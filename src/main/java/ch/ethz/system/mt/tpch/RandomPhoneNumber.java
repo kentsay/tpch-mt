@@ -33,11 +33,34 @@ public class RandomPhoneNumber
 
     public String nextValue(long nationKey)
     {
-        return String.format(ENGLISH,
-                "%02d-%03d-%03d-%04d",
-                (10 + (nationKey % NATIONS_MAX)),
-                nextInt(100, 999),
-                nextInt(100, 999),
-                nextInt(1000, 9999));
+        int format = (int) nationKey % 3;
+        String number = new String("");
+        switch (format) {
+            case 0:
+                number = String.format(ENGLISH,
+                        "%02d-%03d-%03d-%04d",
+                        (10 + (nationKey % NATIONS_MAX)),
+                        nextInt(100, 999),
+                        nextInt(100, 999),
+                        nextInt(1000, 9999));
+                break;
+            case 1:
+                number = String.format(ENGLISH,
+                        "00%02d-%03d-%03d-%04d",
+                        (10 + (nationKey % NATIONS_MAX)),
+                        nextInt(100, 999),
+                        nextInt(100, 999),
+                        nextInt(1000, 9999));
+                break;
+            case 2:
+                number = String.format(ENGLISH,
+                        "+%02d-%03d-%03d-%04d",
+                        (10 + (nationKey % NATIONS_MAX)),
+                        nextInt(100, 999),
+                        nextInt(100, 999),
+                        nextInt(1000, 9999));
+                break;
+        }
+        return number;
     }
 }
