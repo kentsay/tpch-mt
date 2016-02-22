@@ -33,9 +33,9 @@ public class RandomPhoneNumber
         super(seed, 3 * expectedRowCount);
     }
 
-    public String nextValue(long nationKey)
+    public String nextValue(long nationKey, int formatIndex)
     {
-        int format = new Random().nextInt(10) % 3;
+        int format = formatIndex % 3;
         String number = new String("");
         switch (format) {
             case 0:

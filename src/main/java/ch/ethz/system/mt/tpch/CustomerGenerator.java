@@ -16,6 +16,7 @@ package ch.ethz.system.mt.tpch;
 import com.google.common.collect.AbstractIterator;
 
 import java.util.Iterator;
+import java.util.Random;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -88,6 +89,7 @@ public class CustomerGenerator
         private long counter = 0;
         private int[] dataBlock;
         private int dataSizeIndex = 0;
+        int formatIndex = new Random().nextInt(10);
 
         private CustomerGeneratorIterator(Distributions distributions, TextPool textPool, int[] dataBlock, long startIndex, long rowCount)
         {
@@ -118,9 +120,10 @@ public class CustomerGenerator
             if ((startIndex + counter + 1) > dataBlock[dataSizeIndex]) {
                 dataSizeIndex++;
                 counter = 0;
+                formatIndex = new Random().nextInt(10);
             }
 
-            Customer customer = makeCustomer(startIndex + counter + 1);
+            Customer customer = makeCustomer(startIndex + counter + 1, formatIndex);
 
             addressRandom.rowFinished();
             nationKeyRandom.rowFinished();
@@ -135,7 +138,7 @@ public class CustomerGenerator
             return customer;
         }
 
-        private Customer makeCustomer(long customerKey)
+        private Customer makeCustomer(long customerKey, int formatIndex)
         {
             long nationKey = nationKeyRandom.nextValue();
 
@@ -144,7 +147,7 @@ public class CustomerGenerator
                     String.format(ENGLISH, "Customer#%09d", customerKey),
                     addressRandom.nextValue(),
                     nationKey,
-                    phoneRandom.nextValue(nationKey),
+                    phoneRandom.nextValue(nationKey, formatIndex),
                     accountBalanceRandom.nextValue(),
                     marketSegmentRandom.nextValue(),
                     commentRandom.nextValue());

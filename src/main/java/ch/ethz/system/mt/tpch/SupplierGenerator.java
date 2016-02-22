@@ -16,6 +16,7 @@ package ch.ethz.system.mt.tpch;
 import com.google.common.collect.AbstractIterator;
 
 import java.util.Iterator;
+import java.util.Random;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -99,6 +100,7 @@ public class SupplierGenerator
         private long counter = 0;
         private int[] dataBlock;
         private int dataSizeIndex = 0;
+        int formatIndex = new Random().nextInt(10);
 
         private SupplierGeneratorIterator(Distributions distributions, TextPool textPool, int[] dataBlock, long startIndex, long rowCount)
         {
@@ -131,9 +133,10 @@ public class SupplierGenerator
             if ((startIndex + counter + 1) > dataBlock[dataSizeIndex]) {
                 dataSizeIndex++;
                 counter = 0;
+                formatIndex = new Random().nextInt(10);
             }
 
-            Supplier supplier = makeSupplier(startIndex + counter + 1);
+            Supplier supplier = makeSupplier(startIndex + counter + 1, formatIndex);
 
             addressRandom.rowFinished();
             nationKeyRandom.rowFinished();
@@ -151,7 +154,7 @@ public class SupplierGenerator
             return supplier;
         }
 
-        private Supplier makeSupplier(long supplierKey)
+        private Supplier makeSupplier(long supplierKey, int formatIndex)
         {
             String comment = commentRandom.nextValue();
 
@@ -192,7 +195,7 @@ public class SupplierGenerator
                     String.format(ENGLISH, "Supplier#%09d", supplierKey),
                     addressRandom.nextValue(),
                     nationKey,
-                    phoneRandom.nextValue(nationKey),
+                    phoneRandom.nextValue(nationKey, formatIndex),
                     accountBalanceRandom.nextValue(),
                     comment);
         }
